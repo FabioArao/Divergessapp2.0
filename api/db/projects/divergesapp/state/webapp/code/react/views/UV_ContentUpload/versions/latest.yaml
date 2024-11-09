@@ -1,0 +1,381 @@
+_updated: 1731151058442
+_processing: false
+key: webapp.react.views.UV_ContentUpload.latest
+data:
+  analysis: >-
+    Analysis of UV_ContentUpload Component:
+
+
+    1. Component Purpose:
+       The UV_ContentUpload component is designed for teachers to upload and organize course materials. It provides a user-friendly interface for adding various types of content to specific modules within a course.
+
+    2. State Management:
+       - Local state will be used for managing the upload queue, selected module, and content order.
+       - Global state (Redux) will be accessed for authentication and active course information.
+
+    3. Key Functionalities:
+       a. File Upload:
+          - Implement a drag-and-drop zone for file uploads.
+          - Allow multiple file selection via a file picker.
+          - Display a preview of uploaded files with metadata editing capabilities.
+       
+       b. Module Selection:
+          - Fetch and display a list of modules for the current course.
+          - Allow users to select a module for content assignment.
+       
+       c. Content Organization:
+          - Implement a drag-and-drop interface for reordering content within a module.
+          - Display the current order of content items.
+       
+       d. Metadata Editing:
+          - Provide input fields for editing content metadata (title, description, content type, tags).
+       
+       e. Upload Process:
+          - Implement a function to upload files to the server, including progress tracking.
+          - Handle successful uploads and error cases.
+
+    4. API Interactions:
+       - Fetch modules: GET request to /api/courses/{course_uid}/modules
+       - Upload content: POST request to /api/modules/{module_uid}/content (multipart/form-data)
+
+    5. User Experience Considerations:
+       - Provide clear feedback on upload progress and success/failure states.
+       - Implement responsive design for various screen sizes.
+       - Include input validation and error handling for form submissions.
+
+    6. Performance Optimization:
+       - Implement lazy loading for large file lists.
+       - Use debouncing for search/filter operations if implemented.
+
+    7. Security Considerations:
+       - Implement file type validation and size restrictions.
+       - Ensure proper authentication checks before allowing uploads.
+
+    8. Accessibility:
+       - Ensure all interactive elements are keyboard accessible.
+       - Provide appropriate ARIA labels for dynamic content.
+
+    This component will play a crucial role in allowing teachers to efficiently
+    manage course content, enhancing the overall learning experience for
+    students.
+  tsx: >-
+    import React, { useState, useEffect, useCallback } from 'react';
+
+    import { useParams } from 'react-router-dom';
+
+    import { useSelector } from 'react-redux';
+
+    import { AppState } from '@/store/main';
+
+    import axios from 'axios';
+
+    import { DndProvider, useDrag, useDrop } from 'react-dnd';
+
+    import { HTML5Backend } from 'react-dnd-html5-backend';
+
+
+    interface Module {
+      uid: string;
+      name: string;
+    }
+
+
+    interface UploadItem {
+      uid: string;
+      file: File;
+      progress: number;
+      status: 'queued' | 'uploading' | 'completed' | 'error';
+      metadata: {
+        title: string;
+        description: string;
+        contentType: 'video' | 'document' | 'presentation' | 'audio' | 'other';
+        tags: string[];
+      };
+    }
+
+
+    const UV_ContentUpload: React.FC = () => {
+      const { course_uid } = useParams<{ course_uid: string }>();
+      const auth = useSelector((state: AppState) => state.auth);
+      const [modules, setModules] = useState<Module[]>([]);
+      const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+      const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
+      const [contentOrder, setContentOrder] = useState<string[]>([]);
+
+      useEffect(() => {
+        fetchModules();
+      }, [course_uid]);
+
+      const fetchModules = async () => {
+        try {
+          const response = await axios.get(`http://localhost:1337/api/courses/${course_uid}/modules`, {
+            headers: { Authorization: `Bearer ${auth.token}` },
+          });
+          setModules(response.data);
+          if (response.data.length > 0) {
+            setSelectedModule(response.data[0]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch modules:', error);
+        }
+      };
+
+      const handleFileDrop = useCallback((acceptedFiles: File[]) => {
+        const newItems: UploadItem[] = acceptedFiles.map((file) => ({
+          uid: Math.random().toString(36).substr(2, 9),
+          file,
+          progress: 0,
+          status: 'queued',
+          metadata: {
+            title: file.name,
+            description: '',
+            contentType: getContentType(file.type),
+            tags: [],
+          },
+        }));
+        setUploadQueue((prev) => [...prev, ...newItems]);
+      }, []);
+
+      const getContentType = (mimeType: string): UploadItem['metadata']['contentType'] => {
+        if (mimeType.startsWith('video/')) return 'video';
+        if (mimeType.startsWith('audio/')) return 'audio';
+        if (mimeType.includes('document') || mimeType.includes('pdf')) return 'document';
+        if (mimeType.includes('presentation')) return 'presentation';
+        return 'other';
+      };
+
+      const updateFileMetadata = (uid: string, metadata: Partial<UploadItem['metadata']>) => {
+        setUploadQueue((prev) =>
+          prev.map((item) =>
+            item.uid === uid ? { ...item, metadata: { ...item.metadata, ...metadata } } : item
+          )
+        );
+      };
+
+      const removeFileFromQueue = (uid: string) => {
+        setUploadQueue((prev) => prev.filter((item) => item.uid !== uid));
+      };
+
+      const uploadFiles = async () => {
+        for (const item of uploadQueue) {
+          if (item.status !== 'queued') continue;
+
+          const formData = new FormData();
+          formData.append('file', item.file);
+          formData.append('title', item.metadata.title);
+          formData.append('description', item.metadata.description);
+          formData.append('content_type', item.metadata.contentType);
+          formData.append('tags', JSON.stringify(item.metadata.tags));
+
+          try {
+            const response = await axios.post(
+              `http://localhost:1337/api/modules/${selectedModule?.uid}/content`,
+              formData,
+              {
+                headers: {
+                  'Content-Type': 'multipart/form-data',
+                  Authorization: `Bearer ${auth.token}`,
+                },
+                onUploadProgress: (progressEvent) => {
+                  const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                  updateUploadProgress(item.uid, progress);
+                },
+              }
+            );
+
+            updateUploadStatus(item.uid, 'completed');
+            setContentOrder((prev) => [...prev, response.data.uid]);
+          } catch (error) {
+            console.error('Upload failed:', error);
+            updateUploadStatus(item.uid, 'error');
+          }
+        }
+      };
+
+      const updateUploadProgress = (uid: string, progress: number) => {
+        setUploadQueue((prev) =>
+          prev.map((item) => (item.uid === uid ? { ...item, progress } : item))
+        );
+      };
+
+      const updateUploadStatus = (uid: string, status: UploadItem['status']) => {
+        setUploadQueue((prev) =>
+          prev.map((item) => (item.uid === uid ? { ...item, status } : item))
+        );
+      };
+
+      const reorderContent = (dragIndex: number, hoverIndex: number) => {
+        const newOrder = [...contentOrder];
+        const [reorderedItem] = newOrder.splice(dragIndex, 1);
+        newOrder.splice(hoverIndex, 0, reorderedItem);
+        setContentOrder(newOrder);
+      };
+
+      const ContentItem: React.FC<{ id: string; index: number }> = ({ id, index }) => {
+        const [{ isDragging }, drag] = useDrag({
+          type: 'CONTENT_ITEM',
+          item: { id, index },
+          collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+          }),
+        });
+
+        const [, drop] = useDrop({
+          accept: 'CONTENT_ITEM',
+          hover(item: { id: string; index: number }, monitor) {
+            if (!ref.current) {
+              return;
+            }
+            const dragIndex = item.index;
+            const hoverIndex = index;
+            if (dragIndex === hoverIndex) {
+              return;
+            }
+            reorderContent(dragIndex, hoverIndex);
+            item.index = hoverIndex;
+          },
+        });
+
+        const ref = React.useRef<HTMLDivElement>(null);
+        drag(drop(ref));
+
+        return (
+          <div
+            ref={ref}
+            className={`p-2 mb-2 bg-white rounded shadow ${isDragging ? 'opacity-50' : ''}`}
+          >
+            {id}
+          </div>
+        );
+      };
+
+      return (
+        <DndProvider backend={HTML5Backend}>
+          <div className="container mx-auto p-4">
+            <h1 className="text-2xl font-bold mb-4">Content Upload</h1>
+            
+            <div className="mb-4">
+              <label htmlFor="module-select" className="block mb-2">Select Module:</label>
+              <select
+                id="module-select"
+                className="w-full p-2 border rounded"
+                value={selectedModule?.uid || ''}
+                onChange={(e) => setSelectedModule(modules.find((m) => m.uid === e.target.value) || null)}
+              >
+                {modules.map((module) => (
+                  <option key={module.uid} value={module.uid}>
+                    {module.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div
+              className="border-2 border-dashed border-gray-300 rounded p-4 mb-4"
+              onDrop={(e) => {
+                e.preventDefault();
+                handleFileDrop(Array.from(e.dataTransfer.files));
+              }}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              <p className="text-center">Drag and drop files here or click to select files</p>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => handleFileDrop(Array.from(e.target.files || []))}
+                className="hidden"
+                id="file-input"
+              />
+              <label htmlFor="file-input" className="block text-center mt-2 text-blue-500 cursor-pointer">
+                Select Files
+              </label>
+            </div>
+
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold mb-2">Upload Queue</h2>
+              {uploadQueue.map((item) => (
+                <div key={item.uid} className="bg-gray-100 p-2 mb-2 rounded">
+                  <div className="flex justify-between items-center mb-2">
+                    <span>{item.file.name}</span>
+                    <button
+                      onClick={() => removeFileFromQueue(item.uid)}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={item.metadata.title}
+                    onChange={(e) => updateFileMetadata(item.uid, { title: e.target.value })}
+                    className="w-full p-1 mb-1 border rounded"
+                    placeholder="Title"
+                  />
+                  <textarea
+                    value={item.metadata.description}
+                    onChange={(e) => updateFileMetadata(item.uid, { description: e.target.value })}
+                    className="w-full p-1 mb-1 border rounded"
+                    placeholder="Description"
+                  />
+                  <select
+                    value={item.metadata.contentType}
+                    onChange={(e) => updateFileMetadata(item.uid, { contentType: e.target.value as UploadItem['metadata']['contentType'] })}
+                    className="w-full p-1 mb-1 border rounded"
+                  >
+                    <option value="video">Video</option>
+                    <option value="document">Document</option>
+                    <option value="presentation">Presentation</option>
+                    <option value="audio">Audio</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={item.metadata.tags.join(', ')}
+                    onChange={(e) => updateFileMetadata(item.uid, { tags: e.target.value.split(',').map((tag) => tag.trim()) })}
+                    className="w-full p-1 mb-1 border rounded"
+                    placeholder="Tags (comma-separated)"
+                  />
+                  <div className="w-full bg-gray-200 rounded">
+                    <div
+                      className="bg-blue-500 text-xs leading-none py-1 text-center text-white rounded"
+                      style={{ width: `${item.progress}%` }}
+                    >
+                      {item.progress}%
+                    </div>
+                  </div>
+                  <span className="text-sm">{item.status}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={uploadFiles}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              disabled={uploadQueue.length === 0 || !selectedModule}
+            >
+              Upload Files
+            </button>
+
+            <div className="mt-4">
+              <h2 className="text-xl font-semibold mb-2">Content Order</h2>
+              {contentOrder.map((id, index) => (
+                <ContentItem key={id} id={id} index={index} />
+              ))}
+            </div>
+          </div>
+        </DndProvider>
+      );
+    };
+
+
+    export default UV_ContentUpload;
+  dependencies:
+    react: "*"
+    react-dom: "*"
+    react-router-dom: "*"
+    react-redux: "*"
+    "@reduxjs/toolkit": "*"
+    axios: "*"
+    react-dnd: "*"
+    react-dnd-html5-backend: "*"
+  timestamp: "1731114900049"

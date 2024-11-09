@@ -1,0 +1,202 @@
+_updated: 1731084757520
+_processing: false
+key: backend.specifications.asyncapi
+data:
+  asyncapi: 2.6.0
+  info:
+    title: DivergesiApp Realtime API
+    version: 1.0.0
+    description: Realtime API for DivergesiApp educational platform
+  servers:
+    production:
+      url: wss://api.divergesiapp.com
+      protocol: wss
+    development:
+      url: ws://localhost:1337
+      protocol: ws
+  channels:
+    new_message:
+      publish:
+        summary: Client sends a new message
+        operationId: sendNewMessage
+        message:
+          $ref: "#/components/messages/NewMessageRequest"
+      subscribe:
+        summary: Client receives a new message
+        operationId: receiveNewMessage
+        message:
+          $ref: "#/components/messages/NewMessageResponse"
+    new_notification:
+      subscribe:
+        summary: Client receives a new notification
+        operationId: receiveNewNotification
+        message:
+          $ref: "#/components/messages/NewNotificationResponse"
+    progress_update:
+      publish:
+        summary: Client sends a progress update
+        operationId: sendProgressUpdate
+        message:
+          $ref: "#/components/messages/ProgressUpdateRequest"
+      subscribe:
+        summary: Client receives a progress update
+        operationId: receiveProgressUpdate
+        message:
+          $ref: "#/components/messages/ProgressUpdateResponse"
+  components:
+    messages:
+      NewMessageRequest:
+        name: NewMessageRequest
+        payload:
+          $ref: "#/components/schemas/NewMessageRequestPayload"
+      NewMessageResponse:
+        name: NewMessageResponse
+        payload:
+          $ref: "#/components/schemas/NewMessageResponsePayload"
+      NewNotificationResponse:
+        name: NewNotificationResponse
+        payload:
+          $ref: "#/components/schemas/NewNotificationResponsePayload"
+      ProgressUpdateRequest:
+        name: ProgressUpdateRequest
+        payload:
+          $ref: "#/components/schemas/ProgressUpdateRequestPayload"
+      ProgressUpdateResponse:
+        name: ProgressUpdateResponse
+        payload:
+          $ref: "#/components/schemas/ProgressUpdateResponsePayload"
+    schemas:
+      NewMessageRequestPayload:
+        type: object
+        required:
+          - recipient_uid
+          - body
+        properties:
+          recipient_uid:
+            type: string
+            description: The UID of the message recipient
+          subject:
+            type: string
+            description: The subject of the message (optional)
+          body:
+            type: string
+            description: The content of the message
+      NewMessageResponsePayload:
+        type: object
+        required:
+          - uid
+          - sender_uid
+          - recipient_uid
+          - body
+          - sent_at
+        properties:
+          uid:
+            type: string
+            description: The unique identifier of the message
+          sender_uid:
+            type: string
+            description: The UID of the message sender
+          recipient_uid:
+            type: string
+            description: The UID of the message recipient
+          subject:
+            type: string
+            description: The subject of the message (optional)
+          body:
+            type: string
+            description: The content of the message
+          sent_at:
+            type: integer
+            description: The timestamp when the message was sent (in milliseconds since
+              epoch)
+      NewNotificationResponsePayload:
+        type: object
+        required:
+          - uid
+          - user_uid
+          - type
+          - content
+          - is_read
+          - created_at
+        properties:
+          uid:
+            type: string
+            description: The unique identifier of the notification
+          user_uid:
+            type: string
+            description: The UID of the user receiving the notification
+          type:
+            type: string
+            description: The type of notification (e.g., 'new_assignment', 'grade_released',
+              'announcement')
+          content:
+            type: string
+            description: The content of the notification
+          is_read:
+            type: boolean
+            description: Whether the notification has been read by the user
+          created_at:
+            type: integer
+            description: The timestamp when the notification was created (in milliseconds
+              since epoch)
+      ProgressUpdateRequestPayload:
+        type: object
+        required:
+          - student_uid
+          - content_item_uid
+          - status
+        properties:
+          student_uid:
+            type: string
+            description: The UID of the student whose progress is being updated
+          content_item_uid:
+            type: string
+            description: The UID of the content item (e.g., lesson, assignment) being
+              updated
+          status:
+            type: string
+            enum:
+              - not_started
+              - in_progress
+              - completed
+            description: The new status of the content item for the student
+          completion_date:
+            type: integer
+            description: The timestamp when the content item was completed (required if
+              status is 'completed')
+      ProgressUpdateResponsePayload:
+        type: object
+        required:
+          - uid
+          - student_uid
+          - content_item_uid
+          - status
+        properties:
+          uid:
+            type: string
+            description: The unique identifier of the progress update record
+          student_uid:
+            type: string
+            description: The UID of the student whose progress was updated
+          content_item_uid:
+            type: string
+            description: The UID of the content item (e.g., lesson, assignment) that was
+              updated
+          status:
+            type: string
+            enum:
+              - not_started
+              - in_progress
+              - completed
+            description: The new status of the content item for the student
+          completion_date:
+            type: integer
+            description: The timestamp when the content item was completed (if status is
+              'completed')
+    securitySchemes:
+      bearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+  security:
+    - bearerAuth: []

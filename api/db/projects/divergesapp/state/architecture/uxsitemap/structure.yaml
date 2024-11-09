@@ -1,0 +1,506 @@
+_updated: 1731084559644
+_processing: false
+key: uxsitemap.structure
+data:
+  views:
+    unique:
+      UV_Landing:
+        title: Landing Page
+        extendedDescription: The public landing page serves as the entry point for
+          unauthenticated users. It showcases the app's value proposition and
+          features. The page includes a hero section with compelling copy and
+          call-to-action buttons, a features overview highlighting key
+          functionalities, testimonials from teachers, students, and guardians
+          to build trust, an FAQ section to address common queries, and a final
+          call-to-action for signing up or contacting sales. The design is
+          responsive, ensuring optimal display on both desktop and mobile
+          devices.
+        notes: This page is crucial for converting visitors into users. Ensure the
+          content is engaging and the value proposition is clear.
+        role: To attract and inform potential users about DivergesiApp, encouraging them
+          to sign up or learn more.
+      UV_Login:
+        title: Login Page
+        extendedDescription: The login page provides a secure entry point for all user
+          types. It features a clean, user-friendly login form with fields for
+          email and password. Additional elements include a 'Remember me'
+          checkbox for convenience, a 'Forgot password' link for account
+          recovery, and a prominent submit button. The page also offers an
+          option to switch to the registration page for new users. Form
+          validation is implemented to ensure correct email format and all
+          required fields are filled. Error messages are displayed for incorrect
+          credentials, and upon successful login, users are redirected to their
+          respective dashboards.
+        notes: Implement secure authentication practices and ensure smooth error
+          handling.
+        role: To authenticate existing users and provide access to their personalized
+          dashboard and features.
+      UV_Registration:
+        title: Registration Page
+        extendedDescription: The registration page allows new users to create an
+          account. It includes a comprehensive form with fields for full name,
+          email, password (with confirmation), and user type selection (Teacher,
+          Student, Guardian). The form dynamically adjusts based on the selected
+          user type, displaying additional relevant fields. For students, this
+          includes grade level and school name. For guardians, it includes
+          associated student information. A terms of service agreement checkbox
+          is included to ensure legal compliance. The page implements robust
+          form validation for all fields, handles errors for existing email
+          addresses, and redirects to an email verification page upon successful
+          registration.
+        notes: Ensure GDPR compliance for data collection. Implement a strong password
+          policy.
+        role: To onboard new users, collecting necessary information to set up their
+          accounts and personalize their experience.
+      UV_Dashboard_Teacher:
+        title: Teacher Dashboard
+        extendedDescription: The teacher dashboard serves as the central hub for
+          authenticated teachers. It displays a personalized welcome message and
+          provides a quick overview of key information. This includes statistics
+          on active courses and pending assignments to grade. A calendar widget
+          shows upcoming classes and events, allowing for easy schedule
+          management. The dashboard features a recent activity feed showing new
+          submissions, messages, and other relevant updates. Quick access
+          buttons for creating new courses or assignments are prominently
+          displayed. A list of active courses is presented, showing key
+          information such as student count and next assignment due date. All
+          elements are interactive, allowing teachers to quickly navigate to
+          detailed views or perform actions.
+        notes: Prioritize information display based on urgency and importance. Consider
+          implementing customizable dashboard layouts.
+        role: To provide teachers with a comprehensive overview of their courses,
+          assignments, and responsibilities, enabling efficient management and
+          quick access to key functions.
+      UV_Dashboard_Student:
+        title: Student Dashboard
+        extendedDescription: The student dashboard is tailored for authenticated
+          students, offering a personalized and informative overview of their
+          academic progress. It begins with a welcoming message including the
+          student's name. A prominent feature is the progress overview for all
+          enrolled courses, presented through visual representations such as
+          progress bars or charts. An upcoming assignments widget displays
+          forthcoming tasks with their due dates, helping students manage their
+          workload. A section for recent grades and feedback summary allows
+          students to quickly assess their performance. The dashboard also
+          provides quick access to recently viewed course materials,
+          facilitating easy continuation of studies. Announcements from teachers
+          are displayed prominently to ensure important information is not
+          missed. All elements are interactive, allowing students to navigate
+          directly to course content, assignments, or detailed grade
+          information.
+        notes: Implement real-time updates for new grades or feedback. Consider adding a
+          study streak or gamification element to encourage regular engagement.
+        role: To give students a clear overview of their academic progress, upcoming
+          tasks, and recent performance, motivating them and facilitating easy
+          access to their learning materials.
+      UV_Dashboard_Guardian:
+        title: Guardian Dashboard
+        extendedDescription: The guardian dashboard is designed to give parents or
+          guardians a comprehensive view of their associated students' academic
+          progress. It starts with a personalized welcome message. The main
+          feature is an overview of all associated students' progress, allowing
+          guardians to quickly assess how each child is performing across their
+          courses. Recent grades and teacher comments for each student are
+          displayed, providing timely updates on academic performance. An
+          upcoming events section highlights important dates such as
+          parent-teacher conferences or assignment deadlines. The dashboard also
+          includes a notification area for new messages from teachers, ensuring
+          guardians stay informed about important communications. If multiple
+          students are associated with the guardian, the dashboard aggregates
+          information for all of them, with options to view detailed reports for
+          each student individually.
+        notes: Ensure privacy controls are in place, especially for accounts with
+          multiple associated students. Consider adding options for guardians to
+          set academic goals or receive regular progress reports.
+        role: To keep guardians informed about their children's academic performance,
+          facilitate communication with teachers, and enable proactive
+          involvement in the students' education.
+      UV_CourseCreation:
+        title: Course Creation Page
+        extendedDescription: The course creation page provides teachers with a
+          comprehensive interface to set up new courses. It features a detailed
+          form with fields for course name, description, grade level, subject,
+          and start and end dates. Teachers can upload a course image to make
+          the course visually distinct. The page includes settings for course
+          visibility and enrollment options, allowing teachers to control
+          access. Dynamic form validation ensures all necessary information is
+          provided correctly. A preview option lets teachers see how the course
+          will appear to students before finalizing. The page offers the
+          flexibility to save the course as a draft or publish it immediately.
+          Advanced options might include setting prerequisites, defining
+          learning objectives, or creating a course syllabus.
+        notes: Consider implementing templates or the ability to clone existing courses
+          to streamline the creation process. Ensure integration with the
+          school's curriculum standards if applicable.
+        role: To enable teachers to easily create and configure new courses, ensuring
+          all necessary information and settings are in place for a successful
+          learning experience.
+      UV_CourseOverview:
+        title: Course Overview Page
+        extendedDescription: The course overview page serves as the main hub for a
+          specific course, accessible to both teachers and enrolled students
+          with role-appropriate views. It features a course header displaying
+          the course name, description, and for students, a progress bar showing
+          their overall course completion. An announcements section prominently
+          displays important course-wide messages. The bulk of the page is
+          dedicated to a list of modules or units, each showing completion
+          status for students. An upcoming assignments widget helps users stay
+          on top of pending tasks. A resources section provides access to
+          course-wide materials such as syllabi or reference documents. If
+          implemented, a link to the course discussion forum is included. For
+          teachers, additional controls for managing course content and student
+          progress are available. The page dynamically updates to show new
+          announcements or content.
+        notes: Ensure clear visual distinction between completed, current, and upcoming
+          modules. Consider adding a quick poll or feedback mechanism for
+          student engagement.
+        role: To provide a comprehensive overview of the course structure, content, and
+          progress, serving as a central navigation point for all course-related
+          activities and resources.
+      UV_ContentUpload:
+        title: Content Upload Interface
+        extendedDescription: The content upload interface is a powerful tool for
+          teachers to add and organize course materials. It features a
+          drag-and-drop file upload area supporting multiple file uploads
+          simultaneously. A file type selector allows teachers to categorize
+          content (e.g., video, document, presentation). Metadata input fields
+          enable teachers to add titles, descriptions, and tags to each piece of
+          content. Teachers can assign content to specific modules or units
+          within the course. An content organization tool allows for arranging
+          the order of materials within modules. The interface provides
+          immediate preview capabilities for uploaded content and displays a
+          progress bar for large file uploads. After upload, teachers can edit
+          metadata and reorganize content as needed. The page may also include
+          options for setting release dates or visibility conditions for content
+          items.
+        notes: Implement robust file type validation and virus scanning. Consider adding
+          batch editing features for efficient management of multiple content
+          items.
+        role: To facilitate easy and organized addition of diverse learning materials to
+          courses, ensuring teachers can efficiently create a rich, structured
+          learning environment.
+      UV_AssignmentCreation:
+        title: Assignment Creation Page
+        extendedDescription: The assignment creation page provides teachers with a
+          comprehensive interface to create and configure assignments. It
+          includes a detailed form with fields for the assignment title,
+          description, due date and time, and maximum score. Teachers can select
+          the submission type (file upload, text entry, or both) which
+          dynamically adjusts the form. Options to attach files or resources to
+          the assignment are available. If implemented, settings for plagiarism
+          detection can be configured here. The page features a date picker for
+          setting due dates and times. An advanced option allows teachers to
+          create a grading rubric directly on this page. A preview function
+          shows how the assignment will appear to students. Teachers can save
+          the assignment as a draft or publish it immediately. The page may also
+          include options for setting late submission policies or creating
+          recurring assignments.
+        notes: Consider implementing assignment templates for quick creation. Ensure
+          integration with the course calendar and gradebook.
+        role: To enable teachers to create clear, well-structured assignments with all
+          necessary parameters, facilitating effective assessment and student
+          engagement.
+      UV_AssignmentSubmission:
+        title: Assignment Submission Page
+        extendedDescription: The assignment submission page is where students view
+          assignment details and submit their work. It displays comprehensive
+          assignment information including title, description, due date, and
+          maximum score. The submission interface adapts based on the assignment
+          type, offering file upload capabilities, a text editor, or both as
+          required. A prominent display shows the remaining time until the
+          deadline. If multiple attempts are allowed, a submission history
+          section is included. The page features 'Save Draft' and 'Submit'
+          buttons, with the latter triggering a confirmation prompt before final
+          submission. Real-time validation ensures all submission requirements
+          are met. For file uploads, supported file types and size limits are
+          clearly indicated. After submission, a receipt is displayed and
+          optionally emailed to the student.
+        notes: Implement autosave functionality for text entries. Consider adding a
+          plagiarism self-check tool if applicable.
+        role: To provide students with a clear, user-friendly interface for submitting
+          assignments, ensuring they understand all requirements and can easily
+          complete their work.
+      UV_GradingInterface:
+        title: Grading Interface
+        extendedDescription: The grading interface is a comprehensive tool for teachers
+          to assess submitted assignments efficiently. It features a
+          split-screen view with the student's submission on one side and the
+          grading tools on the other. For document submissions, file annotation
+          tools are provided. The interface includes a score input field and a
+          feedback text area. If a rubric was created during assignment setup,
+          it is displayed here with interactive scoring. The page shows grade
+          and feedback history if the assignment was previously graded. 'Save'
+          and 'Publish Grade' buttons allow teachers to control when students
+          see their grades. Batch grading capabilities for multiple submissions
+          may be included for efficiency. The interface calculates the final
+          grade in real-time based on rubric scores or direct input. An option
+          to return the assignment for revisions is available. The page may also
+          include plagiarism detection results if this feature is implemented.
+        notes: Ensure efficient navigation between student submissions. Consider
+          implementing voice-to-text for faster feedback input.
+        role: To streamline the grading process for teachers, allowing them to provide
+          thorough, structured feedback efficiently while maintaining a clear
+          overview of student submissions and performance.
+      UV_StudentProgress:
+        title: Student Progress Page
+        extendedDescription: The student progress page offers a detailed view of a
+          student's academic performance, accessible to the student, their
+          guardians, and teachers. It displays an overall grade and progress
+          summary at the top. The main section provides a detailed breakdown of
+          grades by assignment and category. If tracked, an attendance record is
+          included. Progress bars or charts visualize course completion rates. A
+          section compiles teacher comments and feedback summaries. The page
+          features interactive charts and graphs for visualizing progress over
+          time. Filtering options allow users to view progress by specific time
+          periods or subjects. For teachers and guardians, there may be an
+          option to view comparison to class averages. The page might also
+          include a learning analytics section, highlighting areas of strength
+          and suggesting areas for improvement.
+        notes: Ensure data visualizations are clear and meaningful. Consider adding
+          goal-setting features for students.
+        role: To provide a comprehensive, visual representation of a student's academic
+          progress, facilitating understanding of performance trends and areas
+          needing attention for all stakeholders.
+      UV_MessagingCenter:
+        title: Messaging Center
+        extendedDescription: The messaging center serves as the central hub for all
+          in-app communication. It features an inbox displaying message threads,
+          sorted by recent activity. A compose interface allows users to create
+          new messages, with a contact list populated based on the user's
+          courses and roles. The page includes a search functionality for both
+          messages and contacts. Users can attach files to messages when
+          composing. The interface supports threaded conversations for easy
+          tracking of discussion topics. Group conversation creation is
+          possible, useful for class-wide communications. Real-time message
+          updates ensure users see new messages instantly. The messaging center
+          integrates with the app's notification system, alerting users to new
+          messages across the platform. For teachers, there might be additional
+          features like message templates or scheduled sending.
+        notes: Implement robust privacy controls, especially for communications
+          involving minors. Consider adding read receipts and message
+          prioritization features.
+        role: To facilitate effective, organized communication between all platform
+          users, enhancing collaboration and information sharing within the
+          educational context.
+      UV_VideoConference:
+        title: Video Conference Interface
+        extendedDescription: The video conference interface provides a robust
+          environment for conducting virtual classes or meetings. It features a
+          main video display area showing participants, with options to adjust
+          layout based on the number of participants. A chat sidebar allows for
+          text communication alongside video. Screen sharing controls enable
+          presenters to display their content. A participant list with
+          management tools is available, particularly useful for teachers
+          hosting sessions. Recording options allow teachers to capture the
+          session for later review or for absent students. The interface
+          integrates seamlessly with the chosen third-party video conferencing
+          tool. For teachers, additional host controls are provided, such as the
+          ability to mute participants, remove users, or create breakout rooms.
+          The page includes options for audio and video settings, allowing users
+          to test and adjust their equipment before joining.
+        notes: Ensure accessibility features like closed captioning are available.
+          Consider implementing virtual hand raising and poll creation for
+          interactive sessions.
+        role: To enable effective virtual face-to-face communication and teaching,
+          providing a feature-rich environment for interactive online classes,
+          office hours, or parent-teacher conferences.
+    shared:
+      GV_TopNavigation:
+        title: Top Navigation Bar
+        extendedDescription: The top navigation bar is a persistent element across all
+          authenticated user pages, providing quick access to key areas of the
+          application. It features the app logo on the left, which serves as a
+          clickable link to return to the user's dashboard. The main navigation
+          menu is dynamically generated based on the user's role (teacher,
+          student, or guardian), displaying relevant options such as Courses,
+          Students, Messages, and Profile. A notification bell icon is
+          prominently displayed, showing a count of unread notifications. On the
+          right, a user profile dropdown displays the user's name and avatar,
+          providing quick access to profile settings and the log out option. On
+          mobile devices, the navigation collapses into a hamburger menu to
+          ensure usability on smaller screens.
+        notes: Ensure the navigation is keyboard accessible for users relying on screen
+          readers. Consider adding a quick search feature in the navigation for
+          larger institutions.
+        role: To provide consistent, easy navigation throughout the application,
+          allowing users quick access to key features and information regardless
+          of their current page.
+        sharedByViews:
+          - UV_Dashboard_Teacher
+          - UV_Dashboard_Student
+          - UV_Dashboard_Guardian
+          - UV_CourseOverview
+          - UV_ContentUpload
+          - UV_AssignmentCreation
+          - UV_AssignmentSubmission
+          - UV_GradingInterface
+          - UV_StudentProgress
+          - UV_MessagingCenter
+          - UV_VideoConference
+        relativePosition: Fixed at the top of the page, above all other content
+      GV_Footer:
+        title: Footer
+        extendedDescription: The footer is a global element present at the bottom of all
+          pages, including public and authenticated views. It contains essential
+          links and information. The copyright information is displayed
+          prominently, usually centered. Links to the Terms of Service and
+          Privacy Policy are included, ensuring easy access to legal
+          information. Social media icons may be present, linking to the
+          institution's official accounts. Contact information, such as an email
+          address or support phone number, is provided for user assistance. If
+          multi-language support is implemented, a language selector is included
+          in the footer. On mobile devices, the footer adjusts its layout to
+          maintain readability and usability on smaller screens.
+        notes: Ensure all links in the footer open in a new tab to prevent disruption of
+          the user's current session. Consider adding an accessibility statement
+          link.
+        role: To provide consistent access to important links, legal information, and
+          support contacts across all pages of the application.
+        sharedByViews:
+          - UV_Landing
+          - UV_Login
+          - UV_Registration
+          - UV_Dashboard_Teacher
+          - UV_Dashboard_Student
+          - UV_Dashboard_Guardian
+          - UV_CourseOverview
+          - UV_ContentUpload
+          - UV_AssignmentCreation
+          - UV_AssignmentSubmission
+          - UV_GradingInterface
+          - UV_StudentProgress
+          - UV_MessagingCenter
+          - UV_VideoConference
+        relativePosition: At the bottom of the page, below all other content
+      GV_Notifications:
+        title: Notifications Panel
+        extendedDescription: The notifications panel is a global overlay that can be
+          accessed from any authenticated page. It displays a list of recent
+          notifications, sorted by date with the newest first. Each notification
+          includes an icon indicating its type (e.g., message, assignment,
+          grade), the notification text, and a timestamp. A 'Mark all as read'
+          button allows users to quickly clear their notifications. A 'See all
+          notifications' link at the bottom leads to a full notifications page
+          for a comprehensive view. The panel is scrollable to accommodate
+          multiple notifications while maintaining a manageable size on the
+          screen. Clicking a notification navigates the user to the relevant
+          page, such as a new message or a graded assignment. The panel is
+          designed to be non-intrusive, appearing as an overlay without
+          navigating away from the current page.
+        notes: Implement smart grouping for multiple notifications of the same type.
+          Consider adding notification preferences to allow users to customize
+          what notifications they receive.
+        role: To keep users informed of important updates, activities, and required
+          actions within the application, enhancing engagement and ensuring
+          timely responses to new information.
+        sharedByViews:
+          - UV_Dashboard_Teacher
+          - UV_Dashboard_Student
+          - UV_Dashboard_Guardian
+          - UV_CourseOverview
+          - UV_ContentUpload
+          - UV_AssignmentCreation
+          - UV_AssignmentSubmission
+          - UV_GradingInterface
+          - UV_StudentProgress
+          - UV_MessagingCenter
+          - UV_VideoConference
+        relativePosition: Overlay panel, typically appearing from the top right of the
+          screen when the notification icon in GV_TopNavigation is clicked
+  crosslinks:
+    - source: UV_Landing
+      target: UV_Login
+      intent: Enable user authentication
+      action: Click 'Log In' button in the navigation or CTA sections
+    - source: UV_Landing
+      target: UV_Registration
+      intent: Facilitate new user sign-up
+      action: Click 'Sign Up' button in the navigation or CTA sections
+    - source: GV_TopNavigation
+      target: UV_Dashboard_Teacher
+      intent: Provide quick access to main dashboard for teachers
+      action: Click on the logo or 'Dashboard' menu item
+    - source: GV_TopNavigation
+      target: UV_Dashboard_Student
+      intent: Provide quick access to main dashboard for students
+      action: Click on the logo or 'Dashboard' menu item
+    - source: GV_TopNavigation
+      target: UV_Dashboard_Guardian
+      intent: Provide quick access to main dashboard for guardians
+      action: Click on the logo or 'Dashboard' menu item
+    - source: GV_TopNavigation
+      target: UV_MessagingCenter
+      intent: Access communication hub
+      action: Click on 'Messages' menu item
+    - source: UV_Dashboard_Teacher
+      target: UV_CourseCreation
+      intent: Initiate new course setup
+      action: Click 'Create New Course' button
+    - source: UV_Dashboard_Teacher
+      target: UV_CourseOverview
+      intent: View specific course details
+      action: Click on a course card or list item
+    - source: UV_Dashboard_Student
+      target: UV_CourseOverview
+      intent: Access enrolled course
+      action: Click on a course card or progress bar
+    - source: UV_Dashboard_Student
+      target: UV_AssignmentSubmission
+      intent: Complete pending assignments
+      action: Click on an assignment in the upcoming assignments widget
+    - source: UV_Dashboard_Guardian
+      target: UV_StudentProgress
+      intent: View detailed student performance
+      action: Click on a student's name or 'View Details' button
+    - source: UV_CourseOverview
+      target: UV_ContentUpload
+      intent: Add new course materials
+      action: Click 'Upload Content' button (teachers only)
+    - source: UV_CourseOverview
+      target: UV_AssignmentCreation
+      intent: Create new assignment
+      action: Click 'Create Assignment' button (teachers only)
+    - source: UV_CourseOverview
+      target: UV_AssignmentSubmission
+      intent: Submit assignment work
+      action: Click on an assignment item (students only)
+    - source: UV_AssignmentSubmission
+      target: UV_GradingInterface
+      intent: Grade submitted work
+      action: Click 'Grade Submission' button on a submitted assignment (teachers only)
+    - source: UV_GradingInterface
+      target: UV_StudentProgress
+      intent: Review overall student performance
+      action: Click on student name or 'View Progress' button
+    - source: GV_Notifications
+      target: UV_CourseOverview
+      intent: View course updates
+      action: Click on a course-related notification
+    - source: GV_Notifications
+      target: UV_AssignmentSubmission
+      intent: Access new or graded assignments
+      action: Click on an assignment-related notification
+    - source: GV_Notifications
+      target: UV_MessagingCenter
+      intent: Respond to new messages
+      action: Click on a message notification
+    - source: UV_MessagingCenter
+      target: UV_VideoConference
+      intent: Initiate or join a video call
+      action: Click 'Start Video Call' button within a message thread
+    - source: UV_CourseOverview
+      target: UV_VideoConference
+      intent: Join a scheduled video class
+      action: Click on a scheduled video class link in the course overview
+    - source: UV_StudentProgress
+      target: UV_CourseOverview
+      intent: View detailed course performance
+      action: Click on a specific course in the progress overview
+    - source: UV_Dashboard_Teacher
+      target: UV_GradingInterface
+      intent: Access pending assignments to grade
+      action: Click on 'Assignments to Grade' widget or link
+    - source: UV_Dashboard_Guardian
+      target: UV_MessagingCenter
+      intent: Communicate with teachers
+      action: Click 'Message Teacher' button next to a student's progress summary

@@ -1,0 +1,860 @@
+_updated: 1731084734459
+_processing: false
+key: pm.brd
+data: >-
+  # Backend Requirements Document (BRD) for DivergesiApp
+
+
+  ## I. General, Personas, Features
+
+
+  DivergesiApp is an interactive educational platform designed to facilitate
+  seamless communication and collaboration between teachers, students, and
+  guardians. The platform aims to streamline the learning process by providing a
+  comprehensive environment for content delivery, assignment submission,
+  progress tracking, and communication.
+
+
+  ### Personas:
+
+  1. Teachers: Create and manage courses, upload content, grade assignments, and
+  communicate with students and guardians.
+
+  2. Students: Access course materials, submit assignments, track progress, and
+  communicate with teachers.
+
+  3. Guardians: Monitor their child's progress, view grades, and communicate
+  with teachers.
+
+
+  ### Key Features:
+
+  1. User Management
+
+  2. Course Management
+
+  3. Content Upload and Management
+
+  4. Learning Path Creation
+
+  5. Assignment Submission and Grading
+
+  6. Progress Tracking
+
+  7. Communication Tools
+
+  8. Notifications
+
+  9. Calendar Integration
+
+  10. Discussion Forums
+
+  11. Parent-Teacher Meeting Scheduling
+
+  12. Offline Content Access
+
+  13. Learning Analytics
+
+
+  ## II. REST API
+
+
+  ### II.A. Justification & Reasoning
+
+
+  A REST API is essential for DivergesiApp to handle the core functionality of
+  the platform. It will facilitate user authentication, course management,
+  content upload and retrieval, assignment submission and grading, progress
+  tracking, and communication features. The REST API will allow the frontend to
+  interact with the backend server, perform CRUD operations on various resources
+  (users, courses, assignments, etc.), and retrieve data for display in the user
+  interface.
+
+
+  ### II.B. API Endpoints
+
+
+  #### 3.B.1. User Authentication
+
+
+  ##### Method & Path
+
+  `POST /api/auth/login`
+
+
+  ##### Extended Description
+
+  This endpoint handles user authentication by validating the provided
+  credentials and returning an authentication token for subsequent API calls.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This function will interact with the `users` table in the database. It will
+  need to:
+
+  1. Retrieve the user record based on the provided email.
+
+  2. Verify the password hash against the stored hash.
+
+
+  ```sql
+
+  SELECT uid, email, password_hash, user_type FROM users WHERE email = $1;
+
+  ```
+
+
+  The function will not need to insert or update any data in this operation. The
+  `uid` from the users table will be used to generate the authentication token.
+
+
+  ###### Interaction with <> External APIs
+
+  This function does not require interaction with external APIs.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This endpoint does not require authentication as it is the entry point for
+  user login.
+
+
+  ###### Request
+
+  - Body content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "email": "string",
+      "password": "string"
+    }
+    ```
+
+  ###### Response
+
+  - Content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "token": "string",
+      "user": {
+        "uid": "string",
+        "email": "string",
+        "user_type": "string"
+      }
+    }
+    ```
+
+  #### 3.B.2. Create Course
+
+
+  ##### Method & Path
+
+  `POST /api/courses`
+
+
+  ##### Extended Description
+
+  This endpoint allows teachers to create a new course in the system.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This function will interact with the `courses` table in the database. It will
+  need to:
+
+  1. Insert a new record into the `courses` table.
+
+  2. Generate a new `uid` for the course.
+
+  3. Set the `created_at` and `updated_at` timestamps.
+
+
+  ```sql
+
+  INSERT INTO courses (uid, teacher_uid, name, description, grade_level,
+  subject, created_at, updated_at)
+
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+
+  RETURNING uid;
+
+  ```
+
+
+  The function will need to create a new `uid` for the course, as well as set
+  the `created_at` and `updated_at` timestamps. The `teacher_uid` will be
+  obtained from the authenticated user's token.
+
+
+  ###### Interaction with <> External APIs
+
+  This function does not require interaction with external APIs.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This endpoint requires a valid authentication token for a user with the
+  "teacher" role.
+
+
+  ###### Request
+
+  - Body content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "name": "string",
+      "description": "string",
+      "grade_level": "number",
+      "subject": "string"
+    }
+    ```
+
+  ###### Response
+
+  - Content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "uid": "string",
+      "name": "string",
+      "description": "string",
+      "grade_level": "number",
+      "subject": "string",
+      "created_at": "number"
+    }
+    ```
+
+  #### 3.B.3. Upload Content Item
+
+
+  ##### Method & Path
+
+  `POST /api/modules/{module_uid}/content`
+
+
+  ##### Extended Description
+
+  This endpoint allows teachers to upload a new content item (video, PDF, etc.)
+  to a specific module within a course.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This function will interact with the `content_items` table in the database. It
+  will need to:
+
+  1. Insert a new record into the `content_items` table.
+
+  2. Generate a new `uid` for the content item.
+
+  3. Set the `created_at` and `updated_at` timestamps.
+
+  4. Determine the `order_index` based on existing content items in the module.
+
+
+  ```sql
+
+  INSERT INTO content_items (uid, module_uid, title, description, content_type,
+  file_url, order_index, is_mandatory, created_at, updated_at)
+
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+
+  RETURNING uid;
+
+  ```
+
+
+  The function will need to create a new `uid` for the content item, as well as
+  set the `created_at` and `updated_at` timestamps. It will also need to query
+  the existing content items in the module to determine the appropriate
+  `order_index`:
+
+
+  ```sql
+
+  SELECT MAX(order_index) FROM content_items WHERE module_uid = $1;
+
+  ```
+
+
+  ###### Interaction with <> External APIs
+
+  This function may require interaction with a file storage service API to store
+  the uploaded file and generate a `file_url`. However, as the prompt mentions
+  that storage capabilities are already implemented internally in the backend,
+  we'll assume this is handled internally.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This endpoint requires a valid authentication token for a user with the
+  "teacher" role.
+
+
+  ###### Request
+
+  - Body content type: Multipart Form Data
+
+  - Schema:
+    ```json
+    {
+      "title": "string",
+      "description": "string",
+      "content_type": "string",
+      "is_mandatory": "boolean",
+      "file": "file"
+    }
+    ```
+
+  ###### Response
+
+  - Content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "uid": "string",
+      "title": "string",
+      "description": "string",
+      "content_type": "string",
+      "file_url": "string",
+      "order_index": "number",
+      "is_mandatory": "boolean",
+      "created_at": "number"
+    }
+    ```
+
+  #### 3.B.4. Submit Assignment
+
+
+  ##### Method & Path
+
+  `POST /api/assignments/{assignment_uid}/submit`
+
+
+  ##### Extended Description
+
+  This endpoint allows students to submit their completed assignments.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This function will interact with the `submissions` table in the database. It
+  will need to:
+
+  1. Insert a new record into the `submissions` table.
+
+  2. Generate a new `uid` for the submission.
+
+  3. Set the `submitted_at` timestamp.
+
+
+  ```sql
+
+  INSERT INTO submissions (uid, assignment_uid, student_uid, submission_text,
+  file_url, submitted_at)
+
+  VALUES ($1, $2, $3, $4, $5, $6)
+
+  RETURNING uid;
+
+  ```
+
+
+  The function will need to create a new `uid` for the submission, as well as
+  set the `submitted_at` timestamp. The `student_uid` will be obtained from the
+  authenticated user's token.
+
+
+  ###### Interaction with <> External APIs
+
+  Similar to the content upload, this function may require interaction with a
+  file storage service API if the submission includes a file upload. However,
+  we'll assume this is handled internally as per the given information.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This endpoint requires a valid authentication token for a user with the
+  "student" role.
+
+
+  ###### Request
+
+  - Body content type: Multipart Form Data
+
+  - Schema:
+    ```json
+    {
+      "submission_text": "string",
+      "file": "file"
+    }
+    ```
+
+  ###### Response
+
+  - Content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "uid": "string",
+      "assignment_uid": "string",
+      "submission_text": "string",
+      "file_url": "string",
+      "submitted_at": "number"
+    }
+    ```
+
+  #### 3.B.5. Get Student Progress
+
+
+  ##### Method & Path
+
+  `GET /api/students/{student_uid}/progress`
+
+
+  ##### Extended Description
+
+  This endpoint allows teachers or guardians to view a student's progress across
+  all enrolled courses.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This function will interact with multiple tables in the database:
+
+  1. `course_enrollments` to get the student's enrolled courses
+
+  2. `student_progress` to get the progress for each content item
+
+  3. `content_items` to get details about each content item
+
+  4. `modules` to group content items
+
+  5. `courses` to get course details
+
+
+  ```sql
+
+  SELECT c.uid AS course_uid, c.name AS course_name, m.uid AS module_uid, m.name
+  AS module_name,
+         ci.uid AS content_item_uid, ci.title AS content_item_title, sp.status, sp.completion_date
+  FROM course_enrollments ce
+
+  JOIN courses c ON ce.course_uid = c.uid
+
+  JOIN modules m ON m.course_uid = c.uid
+
+  JOIN content_items ci ON ci.module_uid = m.uid
+
+  LEFT JOIN student_progress sp ON sp.student_uid = ce.student_uid AND
+  sp.content_item_uid = ci.uid
+
+  WHERE ce.student_uid = $1
+
+  ORDER BY c.uid, m.order_index, ci.order_index;
+
+  ```
+
+
+  This query joins multiple tables to retrieve a comprehensive view of the
+  student's progress across all enrolled courses, modules, and content items.
+
+
+  ###### Interaction with <> External APIs
+
+  This function does not require interaction with external APIs.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This endpoint requires a valid authentication token for a user with either the
+  "teacher" or "guardian" role. The requesting user must have permission to view
+  the specified student's progress.
+
+
+  ###### Request
+
+  - No request body is required for this GET request.
+
+
+  ###### Response
+
+  - Content type: JSON
+
+  - Schema:
+    ```json
+    {
+      "courses": [
+        {
+          "uid": "string",
+          "name": "string",
+          "modules": [
+            {
+              "uid": "string",
+              "name": "string",
+              "content_items": [
+                {
+                  "uid": "string",
+                  "title": "string",
+                  "status": "string",
+                  "completion_date": "number"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+    ```
+
+  ## III. Realtime Websockets
+
+
+  ### III.A. Justification & Reasoning
+
+
+  Real-time WebSocket functionality is crucial for certain features of
+  DivergesiApp to provide a responsive and interactive user experience. These
+  features include the messaging system for instant communication between users,
+  real-time notifications for new assignments, graded work, and announcements,
+  and potentially for live updates in the progress tracking dashboards.
+  WebSockets will enable push notifications and live updates without constant
+  polling, improving the user experience and reducing server load.
+
+
+  ### III.B. Events
+
+
+  #### 3.B.1. New Message
+
+
+  ##### Event name
+
+  `new_message`
+
+
+  ##### Extended Description
+
+  This event is triggered when a user sends a new message to another user. It
+  allows for real-time delivery of messages in the platform's messaging system.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This event will interact with the `messages` table in the database. It will
+  need to:
+
+  1. Insert a new record into the `messages` table.
+
+  2. Generate a new `uid` for the message.
+
+  3. Set the `sent_at` timestamp.
+
+
+  ```sql
+
+  INSERT INTO messages (uid, sender_uid, recipient_uid, subject, body, sent_at,
+  read_at)
+
+  VALUES ($1, $2, $3, $4, $5, $6, NULL)
+
+  RETURNING uid;
+
+  ```
+
+
+  The function will need to create a new `uid` for the message, as well as set
+  the `sent_at` timestamp. The `sender_uid` will be obtained from the
+  authenticated user's connection.
+
+
+  ###### Interaction with <> External APIs
+
+  This event does not require interaction with external APIs.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This event requires an authenticated WebSocket connection.
+
+
+  ###### Request payload
+
+  - Schema:
+    ```json
+    {
+      "recipient_uid": "string",
+      "subject": "string",
+      "body": "string"
+    }
+    ```
+
+  ###### Response payload
+
+  - Schema:
+    ```json
+    {
+      "uid": "string",
+      "sender_uid": "string",
+      "recipient_uid": "string",
+      "subject": "string",
+      "body": "string",
+      "sent_at": "number"
+    }
+    ```
+
+  #### 3.B.2. New Notification
+
+
+  ##### Event name
+
+  `new_notification`
+
+
+  ##### Extended Description
+
+  This event is triggered when a new notification needs to be sent to a user,
+  such as a new assignment being posted, grades being released, or an
+  announcement being made.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This event will interact with the `notifications` table in the database. It
+  will need to:
+
+  1. Insert a new record into the `notifications` table.
+
+  2. Generate a new `uid` for the notification.
+
+  3. Set the `created_at` timestamp.
+
+
+  ```sql
+
+  INSERT INTO notifications (uid, user_uid, type, content, is_read, created_at)
+
+  VALUES ($1, $2, $3, $4, false, $5)
+
+  RETURNING uid;
+
+  ```
+
+
+  The function will need to create a new `uid` for the notification, as well as
+  set the `created_at` timestamp. The `user_uid` will be the recipient of the
+  notification.
+
+
+  ###### Interaction with <> External APIs
+
+  This event does not require interaction with external APIs.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This event is typically triggered by the server in response to various actions
+  and doesn't require client-side authentication.
+
+
+  ###### Request payload
+
+  - Schema:
+    ```json
+    {
+      "user_uid": "string",
+      "type": "string",
+      "content": "string"
+    }
+    ```
+
+  ###### Response payload
+
+  - Schema:
+    ```json
+    {
+      "uid": "string",
+      "user_uid": "string",
+      "type": "string",
+      "content": "string",
+      "is_read": "boolean",
+      "created_at": "number"
+    }
+    ```
+
+  #### 3.B.3. Progress Update
+
+
+  ##### Event name
+
+  `progress_update`
+
+
+  ##### Extended Description
+
+  This event is triggered when a student's progress is updated, such as when
+  they complete a content item or an assignment is graded. It allows for
+  real-time updates of progress tracking dashboards.
+
+
+  ##### Analysis
+
+
+  ###### Interaction with <> DB
+
+  This event will interact with the `student_progress` table in the database. It
+  will need to:
+
+  1. Update an existing record in the `student_progress` table or insert a new
+  one if it doesn't exist.
+
+  2. Set the `completion_date` if the status is changed to "completed".
+
+
+  ```sql
+
+  INSERT INTO student_progress (uid, student_uid, content_item_uid, status,
+  completion_date)
+
+  VALUES ($1, $2, $3, $4, $5)
+
+  ON CONFLICT (student_uid, content_item_uid) 
+
+  DO UPDATE SET status = $4, completion_date = $5
+
+  RETURNING uid;
+
+  ```
+
+
+  The function will need to generate a new `uid` if inserting a new record, and
+  set the `completion_date` if the status is "completed".
+
+
+  ###### Interaction with <> External APIs
+
+  This event does not require interaction with external APIs.
+
+
+  ##### Data Details
+
+
+  ###### Auth
+
+  This event requires an authenticated WebSocket connection.
+
+
+  ###### Request payload
+
+  - Schema:
+    ```json
+    {
+      "student_uid": "string",
+      "content_item_uid": "string",
+      "status": "string",
+      "completion_date": "number"
+    }
+    ```
+
+  ###### Response payload
+
+  - Schema:
+    ```json
+    {
+      "uid": "string",
+      "student_uid": "string",
+      "content_item_uid": "string",
+      "status": "string",
+      "completion_date": "number"
+    }
+    ```
+
+  ## IV. Additional Notes
+
+
+  1. Security Considerations:
+     - Implement proper authentication and authorization checks for all API endpoints and WebSocket events.
+     - Use HTTPS for all API communications.
+     - Implement rate limiting to prevent abuse of the API.
+     - Sanitize and validate all input data to prevent SQL injection and other security vulnerabilities.
+
+  2. Performance Optimization:
+     - Implement caching mechanisms for frequently accessed data, such as course information and user profiles.
+     - Use database indexing effectively to optimize query performance, especially for tables that will have a large number of records (e.g., messages, student_progress).
+     - Consider implementing pagination for endpoints that return large datasets.
+
+  3. Scalability:
+     - Design the WebSocket implementation to be scalable, possibly using a pub/sub system to handle a large number of concurrent connections.
+     - Consider implementing database sharding for large tables if the application scales to a very large number of users.
+
+  4. Error Handling:
+     - Implement comprehensive error handling and logging throughout the backend.
+     - Provide meaningful error messages in API responses to assist in debugging and improve user experience.
+
+  5. API Versioning:
+     - Consider implementing API versioning to allow for future updates without breaking existing client integrations.
+
+  6. Documentation:
+     - Maintain comprehensive API documentation, including details on authentication, request/response formats, and any rate limiting policies.
+
+  7. Testing:
+     - Implement thorough unit and integration testing for all API endpoints and WebSocket events.
+     - Set up automated testing and continuous integration to ensure code quality and prevent regressions.
+
+  8. Compliance:
+     - Ensure that the backend implementation complies with relevant data protection regulations (e.g., GDPR, COPPA) given the educational nature of the application and the potential involvement of minors.
+
+  These additional considerations will help ensure that the DivergesiApp backend
+  is robust, secure, and scalable, providing a solid foundation for the
+  educational platform.

@@ -1,0 +1,40 @@
+_updated: 1731153139659
+_processing: false
+key: settings.config.package
+data:
+  backend:
+    dependencies:
+      "@electric-sql/pglite": "*"
+      express: "*"
+      socket.io: "*"
+      cors: "*"
+      morgan: "*"
+      uuid: "*"
+      bcrypt: "*"
+      jsonwebtoken: "*"
+      multer: "*"
+      dotenv: "*"
+    env:
+      PORT: "1337"
+      JWT_SECRET: your_jwt_secret
+  webapp:
+    dependencies:
+      "@reduxjs/toolkit": "*"
+      react-redux: "*"
+      redux-persist: "*"
+      socket.io-client: "*"
+      axios: "*"
+      react: "*"
+      react-dom: "*"
+      react-router-dom: "*"
+      react-dnd: "*"
+      react-dnd-html5-backend: "*"
+      "@tinymce/tinymce-react": "*"
+      date-fns: "*"
+      react-icons: "*"
+      react-pdf: "*"
+      lodash: "*"
+      react-chartjs-2: "*"
+      chart.js: "*"
+      react-datepicker: "*"
+      tailwindcss: "*"

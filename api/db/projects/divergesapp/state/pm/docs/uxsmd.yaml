@@ -1,0 +1,602 @@
+_updated: 1731084457439
+_processing: false
+key: pm.uxsmd
+data: >-
+  # UX Sitemap Document for DivergesiApp
+
+
+  ## 1. Global Shared Views
+
+
+  ### GV_TopNavigation
+
+  This global view represents the top navigation bar that appears consistently
+  across all pages for authenticated users.
+
+
+  Components:
+
+  - Logo (clickable, redirects to dashboard)
+
+  - Main navigation menu (dynamic based on user role)
+    - For Teachers: Courses, Students, Messages, Profile
+    - For Students: My Courses, Assignments, Grades, Messages, Profile
+    - For Guardians: My Children, Messages, Profile
+  - Notification bell icon (displays unread notification count)
+
+  - User profile dropdown (displays user name and avatar)
+    - Profile settings
+    - Log out option
+
+  Behavior:
+
+  - Sticky positioning, always visible at the top of the page
+
+  - Responsive design, collapses into a hamburger menu on mobile devices
+
+  - Active state for current page in the navigation menu
+
+
+  ### GV_Footer
+
+  This global view represents the footer that appears at the bottom of all
+  pages.
+
+
+  Components:
+
+  - Copyright information
+
+  - Links to Terms of Service and Privacy Policy
+
+  - Social media icons
+
+  - Contact information
+
+  - Language selector (if multi-language support is implemented)
+
+
+  Behavior:
+
+  - Sticky positioning at the bottom of the page
+
+  - Responsive design, adjusts layout for mobile devices
+
+
+  ### GV_Notifications
+
+  This global view represents the notifications panel that can be accessed from
+  any page.
+
+
+  Components:
+
+  - List of recent notifications (sorted by date, newest first)
+
+  - Notification type icons (e.g., message, assignment, grade)
+
+  - Timestamp for each notification
+
+  - "Mark all as read" button
+
+  - "See all notifications" link (leads to a full notifications page)
+
+
+  Behavior:
+
+  - Accessible by clicking the notification bell icon in GV_TopNavigation
+
+  - Overlay panel that appears on top of the current page
+
+  - Scrollable if there are many notifications
+
+  - Clicking a notification navigates to the relevant page (e.g., new message,
+  graded assignment)
+
+
+  ## 2. Unique Views
+
+
+  ### UV_Landing
+
+  This is the public landing page for unauthenticated users.
+
+
+  Components:
+
+  - Hero section with value proposition and call-to-action buttons (Sign Up,
+  Learn More)
+
+  - Features overview section
+
+  - Testimonials from teachers, students, and guardians
+
+  - FAQ section
+
+  - Call-to-action for signing up or contacting sales
+
+
+  Behavior:
+
+  - Responsive design with optimized layouts for desktop and mobile
+
+  - Smooth scrolling between sections
+
+  - Interactive elements (e.g., accordion for FAQ, slider for testimonials)
+
+
+  ### UV_Login
+
+  The login page for all user types.
+
+
+  Components:
+
+  - Login form with fields for email and password
+
+  - "Remember me" checkbox
+
+  - "Forgot password" link
+
+  - Submit button
+
+  - Option to switch to registration page
+
+
+  Behavior:
+
+  - Form validation for email format and required fields
+
+  - Error messages for incorrect credentials
+
+  - Redirect to appropriate dashboard upon successful login
+
+
+  ### UV_Registration
+
+  The registration page for new users.
+
+
+  Components:
+
+  - Registration form with fields for:
+    - Full name
+    - Email
+    - Password (with confirmation)
+    - User type selection (Teacher, Student, Guardian)
+  - Additional fields based on user type:
+    - For Students: Grade level, school name
+    - For Guardians: Associated student information
+  - Terms of service agreement checkbox
+
+  - Submit button
+
+
+  Behavior:
+
+  - Dynamic form that adjusts based on selected user type
+
+  - Form validation for all fields
+
+  - Error handling for existing email addresses
+
+  - Redirect to email verification page upon successful registration
+
+
+  ### UV_Dashboard_Teacher
+
+  The main dashboard for authenticated teachers.
+
+
+  Components:
+
+  - Welcome message with teacher's name
+
+  - Quick stats overview (e.g., number of active courses, pending assignments to
+  grade)
+
+  - Upcoming classes/events calendar widget
+
+  - Recent activity feed (new submissions, messages, etc.)
+
+  - Quick access buttons for creating new courses or assignments
+
+  - List of active courses with key information (student count, next assignment
+  due)
+
+
+  Behavior:
+
+  - Personalized content based on the teacher's courses and activities
+
+  - Interactive calendar widget for managing schedule
+
+  - Clickable elements leading to detailed views (e.g., course pages, grading
+  interfaces)
+
+
+  ### UV_Dashboard_Student
+
+  The main dashboard for authenticated students.
+
+
+  Components:
+
+  - Welcome message with student's name
+
+  - Progress overview for enrolled courses (visual representation)
+
+  - Upcoming assignments widget with due dates
+
+  - Recent grades and feedback summary
+
+  - Quick access to recently viewed course materials
+
+  - Announcements from teachers
+
+
+  Behavior:
+
+  - Personalized content based on the student's enrolled courses
+
+  - Interactive elements for quick navigation to course content and assignments
+
+  - Real-time updates for new grades or feedback
+
+
+  ### UV_Dashboard_Guardian
+
+  The main dashboard for authenticated guardians.
+
+
+  Components:
+
+  - Welcome message with guardian's name
+
+  - Overview of associated students' progress
+
+  - Recent grades and teacher comments for each associated student
+
+  - Upcoming events (e.g., parent-teacher conferences)
+
+  - Notifications for new messages from teachers
+
+
+  Behavior:
+
+  - Aggregated view of multiple students' information (if applicable)
+
+  - Quick navigation to detailed student reports
+
+  - Ability to respond to teacher comments or schedule meetings
+
+
+  ### UV_CourseCreation
+
+  The page for teachers to create a new course.
+
+
+  Components:
+
+  - Course creation form with fields for:
+    - Course name
+    - Description
+    - Grade level
+    - Subject
+    - Start and end dates
+  - Option to upload a course image
+
+  - Settings for course visibility and enrollment options
+
+  - Save and publish buttons
+
+
+  Behavior:
+
+  - Dynamic form validation
+
+  - Preview option to see how the course will appear to students
+
+  - Ability to save as draft or publish immediately
+
+
+  ### UV_CourseOverview
+
+  The main page for a specific course, visible to both teachers and enrolled
+  students.
+
+
+  Components:
+
+  - Course header with name, description, and progress bar (for students)
+
+  - Announcements section
+
+  - Modules/units list with completion status
+
+  - Upcoming assignments widget
+
+  - Resources section for course-wide materials
+
+  - Discussion forum link (if implemented)
+
+
+  Behavior:
+
+  - Different views and permissions for teachers vs. students
+
+  - Interactive elements to expand modules and access content
+
+  - Real-time updates for new announcements or content
+
+
+  ### UV_ContentUpload
+
+  The interface for teachers to upload and organize course content.
+
+
+  Components:
+
+  - Drag-and-drop file upload area
+
+  - File type selector (video, document, presentation, etc.)
+
+  - Metadata input fields (title, description, tags)
+
+  - Option to assign content to specific modules/units
+
+  - Content organization tool (for arranging order of materials)
+
+
+  Behavior:
+
+  - Support for multiple file uploads
+
+  - Progress bar for large file uploads
+
+  - Immediate preview of uploaded content
+
+  - Ability to edit metadata and organization after upload
+
+
+  ### UV_AssignmentCreation
+
+  The page for teachers to create and configure assignments.
+
+
+  Components:
+
+  - Assignment creation form with fields for:
+    - Title
+    - Description
+    - Due date and time
+    - Maximum score
+    - Submission type (file upload, text entry, or both)
+  - Option to attach files or resources
+
+  - Settings for plagiarism detection (if implemented)
+
+  - Save and publish buttons
+
+
+  Behavior:
+
+  - Dynamic form based on selected submission type
+
+  - Date picker for setting due dates
+
+  - Option to create a grading rubric
+
+  - Preview of how the assignment will appear to students
+
+
+  ### UV_AssignmentSubmission
+
+  The page for students to view and submit assignments.
+
+
+  Components:
+
+  - Assignment details (title, description, due date, max score)
+
+  - Submission interface (file upload or text editor, based on assignment type)
+
+  - Remaining time until deadline
+
+  - Submission history (if multiple attempts are allowed)
+
+  - Save draft and Submit buttons
+
+
+  Behavior:
+
+  - Real-time validation of submission requirements
+
+  - Autosave functionality for text entries
+
+  - Confirmation prompt before final submission
+
+  - Display of submission receipt after successful upload
+
+
+  ### UV_GradingInterface
+
+  The interface for teachers to grade submitted assignments.
+
+
+  Components:
+
+  - Student submission viewer
+
+  - Grading rubric (if created during assignment setup)
+
+  - Score input field
+
+  - Feedback text area
+
+  - File annotation tools (for submitted documents)
+
+  - Grade and feedback history (if previously graded)
+
+  - Save and Publish grade buttons
+
+
+  Behavior:
+
+  - Split-screen view of submission and grading interface
+
+  - Real-time calculation of final grade based on rubric
+
+  - Option to return assignment for revisions
+
+  - Batch grading capabilities for multiple submissions
+
+
+  ### UV_StudentProgress
+
+  A detailed view of a student's progress, accessible to the student, their
+  guardians, and teachers.
+
+
+  Components:
+
+  - Overall grade and progress summary
+
+  - Detailed breakdown of grades by assignment and category
+
+  - Attendance record (if tracked)
+
+  - Progress bars for course completion
+
+  - Teacher comments and feedback summary
+
+
+  Behavior:
+
+  - Interactive charts and graphs for visualizing progress
+
+  - Filtering options to view progress by time period or subject
+
+  - Comparison to class averages (optional, configurable by teacher)
+
+
+  ### UV_MessagingCenter
+
+  The central hub for all in-app communication.
+
+
+  Components:
+
+  - Inbox with message threads
+
+  - Compose new message interface
+
+  - Contact list (based on courses and roles)
+
+  - Search functionality for messages and contacts
+
+  - File attachment option for messages
+
+
+  Behavior:
+
+  - Real-time message updates
+
+  - Threaded conversations for easy tracking
+
+  - Ability to create group conversations (e.g., for a specific class)
+
+  - Integration with notification system
+
+
+  ### UV_VideoConference
+
+  The interface for conducting and participating in video conferences.
+
+
+  Components:
+
+  - Video display area for participants
+
+  - Chat sidebar
+
+  - Screen sharing controls
+
+  - Participant list and management tools
+
+  - Recording option (for teachers)
+
+
+  Behavior:
+
+  - Integration with third-party video conferencing tool
+
+  - Adjustable layout based on number of participants
+
+  - Host controls for teachers (mute participants, remove users, etc.)
+
+  - Seamless transition from scheduling to joining conferences
+
+
+  ## 3. Cross-Link Analysis
+
+
+  | Source View | Target View | Intent | Action Description |
+
+  |-------------|-------------|--------|---------------------|
+
+  | UV_Landing | UV_Login | Enable user authentication | Click "Log In" button
+  in the navigation or CTA sections |
+
+  | UV_Landing | UV_Registration | Facilitate new user sign-up | Click "Sign Up"
+  button in the navigation or CTA sections |
+
+  | GV_TopNavigation | UV_Dashboard_* | Provide quick access to main dashboard |
+  Click on the logo or "Dashboard" menu item |
+
+  | GV_TopNavigation | UV_MessagingCenter | Access communication hub | Click on
+  "Messages" menu item |
+
+  | UV_Dashboard_Teacher | UV_CourseCreation | Initiate new course setup | Click
+  "Create New Course" button |
+
+  | UV_Dashboard_Teacher | UV_CourseOverview | View specific course details |
+  Click on a course card or list item |
+
+  | UV_Dashboard_Student | UV_CourseOverview | Access enrolled course | Click on
+  a course card or progress bar |
+
+  | UV_Dashboard_Student | UV_AssignmentSubmission | Complete pending
+  assignments | Click on an assignment in the upcoming assignments widget |
+
+  | UV_Dashboard_Guardian | UV_StudentProgress | View detailed student
+  performance | Click on a student's name or "View Details" button |
+
+  | UV_CourseOverview | UV_ContentUpload | Add new course materials | Click
+  "Upload Content" button (teachers only) |
+
+  | UV_CourseOverview | UV_AssignmentCreation | Create new assignment | Click
+  "Create Assignment" button (teachers only) |
+
+  | UV_CourseOverview | UV_AssignmentSubmission | Submit assignment work | Click
+  on an assignment item (students only) |
+
+  | UV_AssignmentSubmission | UV_GradingInterface | Grade submitted work | Click
+  "Grade Submission" button on a submitted assignment (teachers only) |
+
+  | UV_GradingInterface | UV_StudentProgress | Review overall student
+  performance | Click on student name or "View Progress" button |
+
+  | GV_Notifications | Various | Address new activity | Click on a specific
+  notification to navigate to the relevant page |
+
+  | UV_MessagingCenter | UV_VideoConference | Initiate or join a video call |
+  Click "Start Video Call" button within a message thread |
+
+
+  This UX Sitemap Document provides a comprehensive overview of the key views
+  and interactions within the DivergesiApp. It outlines the structure and
+  relationships between different parts of the application, ensuring a cohesive
+  and intuitive user experience for all user types. The document serves as a
+  crucial reference for developers and designers to understand the app's
+  architecture and implement features consistently across the platform.

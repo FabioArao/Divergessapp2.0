@@ -1,0 +1,22 @@
+_updated: 1731084734463
+_processing: false
+key: backend.requirements
+data:
+  restApi:
+    justifyYourAnswer: A REST API is necessary for the core functionality of
+      DivergesiApp. It will handle user authentication, course management,
+      content upload and retrieval, assignment submission and grading, progress
+      tracking, and communication features. The REST API will allow the frontend
+      to interact with the backend server, perform CRUD operations on various
+      resources (users, courses, assignments, etc.), and retrieve data for
+      display in the user interface.
+    required: true
+  realtimeWebsockets:
+    justifyYourAnswer: Real-time WebSocket functionality is required for certain
+      features of DivergesiApp. These include the messaging system for instant
+      communication between users, real-time notifications for new assignments,
+      graded work, and announcements, and potentially for live updates in the
+      progress tracking dashboards. WebSockets will enable push notifications
+      and live updates without constant polling, improving the user experience
+      and reducing server load.
+    required: true

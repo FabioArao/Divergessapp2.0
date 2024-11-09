@@ -1,0 +1,1265 @@
+_updated: 1731089609937
+_processing: false
+key: uxdatamap.views
+data:
+  unique:
+    UV_Landing:
+      slugs?: []
+      urlParams?: []
+      stateVariables?:
+        - name: activeSection
+          role: Tracks the currently active section for smooth scrolling
+          schema: string
+          default: hero
+        - name: isModalOpen
+          role: Controls the visibility of the contact/signup modal
+          schema: boolean
+          default: false
+      actions?:
+        - name: scrollToSection
+          intent: Smoothly scrolls to the selected section of the landing page
+          triggers:
+            - When a navigation item is clicked
+            - When a CTA button is clicked
+        - name: toggleModal
+          intent: Opens or closes the contact/signup modal
+          triggers:
+            - When 'Contact Sales' or 'Sign Up' buttons are clicked
+            - When the modal close button is clicked
+        - name: submitContactForm
+          intent: Handles the submission of the contact form in the modal
+          triggers:
+            - When the contact form submit button is clicked
+          interactionWithBackend?:
+            description: Sends a POST request to /api/contact with the form data
+      globalStateVariablesAccessed?:
+        isAuthenticated: To determine whether to show login/signup buttons or redirect
+          to dashboard
+    UV_Login:
+      slugs?: []
+      urlParams?: []
+      stateVariables?:
+        - name: email
+          role: Stores the user's input email
+          schema: string
+          default: ""
+        - name: password
+          role: Stores the user's input password
+          schema: string
+          default: ""
+        - name: rememberMe
+          role: Stores the user's preference for remembering login
+          schema: boolean
+          default: false
+        - name: isLoading
+          role: Indicates whether a login request is in progress
+          schema: boolean
+          default: false
+        - name: error
+          role: Stores any error messages from failed login attempts
+          schema: string | null
+          default: null
+      actions?:
+        - name: handleInputChange
+          intent: Updates the state as the user types in the input fields
+          triggers:
+            - When the user types in the email or password fields
+            - When the user toggles the remember me checkbox
+        - name: handleSubmit
+          intent: Validates the form and submits the login request
+          triggers:
+            - When the login form is submitted
+          interactionWithBackend?:
+            description: Sends a POST request to /api/auth/login with the email and password
+        - name: handleForgotPassword
+          intent: Navigates the user to the forgot password page
+          triggers:
+            - When the 'Forgot Password' link is clicked
+      globalStateVariablesAccessed?:
+        auth: To store the user's authentication data upon successful login
+    UV_Registration:
+      slugs?: []
+      urlParams?: []
+      stateVariables?:
+        - name: formData
+          role: Stores all the registration form inputs
+          schema: |
+            {
+              full_name: string,
+              email: string,
+              password: string,
+              confirm_password: string,
+              user_type: 'teacher' | 'student' | 'guardian',
+              grade_level?: number,
+              school_name?: string,
+              associated_student?: string
+            }
+          default: |
+            {
+              full_name: "",
+              email: "",
+              password: "",
+              confirm_password: "",
+              user_type: "student"
+            }
+        - name: isLoading
+          role: Indicates whether a registration request is in progress
+          schema: boolean
+          default: false
+        - name: error
+          role: Stores any error messages from failed registration attempts
+          schema: string | null
+          default: null
+      actions?:
+        - name: handleInputChange
+          intent: Updates the formData state as the user fills out the form
+          triggers:
+            - When the user types in any input field
+            - When the user selects a user type
+        - name: handleSubmit
+          intent: Validates the form and submits the registration request
+          triggers:
+            - When the registration form is submitted
+          interactionWithBackend?:
+            description: Sends a POST request to /api/auth/signup with the formData
+        - name: handleUserTypeChange
+          intent: Updates the form fields based on the selected user type
+          triggers:
+            - When the user changes the user type selection
+      globalStateVariablesAccessed?:
+        auth: To store the user's authentication data upon successful registration
+    UV_Dashboard_Teacher:
+      slugs?: []
+      urlParams?: []
+      stateVariables?:
+        - name: stats
+          role: Stores the quick stats for the teacher's dashboard
+          schema: |
+            {
+              activeCourses: number,
+              pendingAssignments: number
+            }
+          default: |
+            {
+              activeCourses: 0,
+              pendingAssignments: 0
+            }
+        - name: upcomingEvents
+          role: Stores the list of upcoming classes and events
+          schema: "Array<{ id: string, title: string, date: string, type: 'class' |
+            'event' }>"
+          default: []
+        - name: recentActivity
+          role: Stores the recent activity feed items
+          schema: "Array<{ id: string, type: string, content: string, timestamp: number
+            }>"
+          default: []
+        - name: activeCourses
+          role: Stores the list of active courses with key information
+          schema: "Array<{ id: string, name: string, studentCount: number,
+            nextAssignmentDue: string }>"
+          default: []
+      actions?:
+        - name: fetchDashboardData
+          intent: Retrieves all necessary data for the teacher's dashboard
+          triggers:
+            - When the dashboard component mounts
+            - When the user manually refreshes the dashboard
+          interactionWithBackend?:
+            description: Sends GET requests to multiple endpoints (/api/teacher/stats,
+              /api/teacher/events, /api/teacher/activity, /api/teacher/courses)
+              to fetch all required data
+        - name: handleCreateCourseClick
+          intent: Navigates the user to the course creation page
+          triggers:
+            - When the 'Create New Course' button is clicked
+        - name: handleCreateAssignmentClick
+          intent: Opens the assignment creation modal or navigates to the assignment
+            creation page
+          triggers:
+            - When the 'Create New Assignment' button is clicked
+        - name: handleCourseClick
+          intent: Navigates the user to the detailed view of a selected course
+          triggers:
+            - When a course item in the active courses list is clicked
+      globalStateVariablesAccessed?:
+        auth: To display the teacher's name and ensure they have the correct permissions
+        notifications: To display any unread notifications in the dashboard
+    UV_Dashboard_Student:
+      slugs?: []
+      urlParams?: []
+      stateVariables?:
+        - name: enrolledCourses
+          role: Stores the list of courses the student is enrolled in with progress
+            information
+          schema: "Array<{ id: string, name: string, progress: number }>"
+          default: []
+        - name: upcomingAssignments
+          role: Stores the list of upcoming assignments with due dates
+          schema: "Array<{ id: string, title: string, courseId: string, courseName:
+            string, dueDate: string }>"
+          default: []
+        - name: recentGrades
+          role: Stores the recently graded assignments with scores
+          schema: "Array<{ id: string, title: string, courseId: string, courseName:
+            string, score: number, maxScore: number }>"
+          default: []
+        - name: announcements
+          role: Stores recent announcements from teachers
+          schema: "Array<{ id: string, courseId: string, courseName: string, content:
+            string, date: string }>"
+          default: []
+      actions?:
+        - name: fetchDashboardData
+          intent: Retrieves all necessary data for the student's dashboard
+          triggers:
+            - When the dashboard component mounts
+            - When the user manually refreshes the dashboard
+          interactionWithBackend?:
+            description: Sends GET requests to multiple endpoints (/api/student/courses,
+              /api/student/assignments, /api/student/grades,
+              /api/student/announcements) to fetch all required data
+        - name: handleCourseClick
+          intent: Navigates the user to the detailed view of a selected course
+          triggers:
+            - When a course item in the enrolled courses list is clicked
+        - name: handleAssignmentClick
+          intent: Navigates the user to the assignment submission page
+          triggers:
+            - When an assignment item in the upcoming assignments list is clicked
+        - name: handleAnnouncementClick
+          intent: Expands the announcement to show full content or navigates to the
+            announcement page
+          triggers:
+            - When an announcement item is clicked
+      globalStateVariablesAccessed?:
+        auth: To display the student's name and ensure they have the correct permissions
+        notifications: To display any unread notifications in the dashboard
+    UV_Dashboard_Guardian:
+      slugs:
+        - name: student_uid
+          intent: Unique identifier of the currently selected student
+          required: false
+          default: null
+      urlParams:
+        - name: timeframe
+          intent: Filter for displaying data within a specific time range
+          required: false
+      stateVariables:
+        - name: associatedStudents
+          role: List of students associated with the guardian
+          schema: |
+            Array<{
+              uid: string,
+              name: string,
+              grade: number,
+              avatar: string
+            }>
+          default: []
+          mappingIfFromSource:
+            - source: globalAppState
+              name: auth.user.associatedStudents
+        - name: selectedStudent
+          role: Currently selected student for detailed view
+          schema: |
+            {
+              uid: string,
+              name: string,
+              grade: number,
+              avatar: string
+            } | null
+          default: null
+          mappingIfFromSource:
+            - source: slugs
+              name: student_uid
+        - name: studentProgress
+          role: Aggregated progress data for the selected student
+          schema: |
+            {
+              overallGrade: number,
+              courseProgress: Array<{
+                courseId: string,
+                courseName: string,
+                progress: number,
+                grade: number
+              }>,
+              recentAssignments: Array<{
+                id: string,
+                title: string,
+                courseName: string,
+                dueDate: string,
+                status: 'completed' | 'pending' | 'overdue'
+              }>
+            }
+          default:
+            overallGrade: 0
+            courseProgress: []
+            recentAssignments: []
+        - name: upcomingEvents
+          role: List of upcoming events relevant to the guardian
+          schema: |
+            Array<{
+              id: string,
+              title: string,
+              date: string,
+              type: 'conference' | 'deadline' | 'other'
+            }>
+          default: []
+        - name: recentMessages
+          role: Recent messages from teachers
+          schema: |
+            Array<{
+              id: string,
+              teacherName: string,
+              subject: string,
+              preview: string,
+              date: string,
+              isRead: boolean
+            }>
+          default: []
+      actions:
+        - name: fetchDashboardData
+          intent: Retrieve all necessary data for the guardian dashboard
+          triggers:
+            - on component mount
+            - when selectedStudent changes
+          interactionWithBackend:
+            description: Makes multiple API calls to fetch student progress, upcoming
+              events, and recent messages. Uses the selectedStudent.uid for
+              student-specific data.
+        - name: selectStudent
+          intent: Change the currently selected student
+          triggers:
+            - when guardian clicks on a student in the student list
+        - name: navigateToDetailedProgress
+          intent: Navigate to a detailed progress view for a specific course
+          triggers:
+            - when guardian clicks on a course in the progress overview
+        - name: respondToMessage
+          intent: Open message compose interface to respond to a teacher message
+          triggers:
+            - when guardian clicks 'Reply' on a message
+      globalStateVariablesAccessed:
+        auth: To get the guardian's information and associated students
+        notifications: To display any new notifications related to the students
+    UV_CourseCreation:
+      stateVariables:
+        - name: courseForm
+          role: Stores the current state of the course creation form
+          schema: |
+            {
+              name: string,
+              description: string,
+              gradeLevel: number,
+              subject: string,
+              startDate: string,
+              endDate: string,
+              visibility: 'public' | 'private',
+              enrollmentType: 'open' | 'invitation',
+              imageFile: File | null
+            }
+          default:
+            name: ""
+            description: ""
+            gradeLevel: null
+            subject: ""
+            startDate: ""
+            endDate: ""
+            visibility: public
+            enrollmentType: open
+            imageFile: null
+        - name: formErrors
+          role: Stores validation errors for the form fields
+          schema: |
+            {
+              name?: string,
+              description?: string,
+              gradeLevel?: string,
+              subject?: string,
+              startDate?: string,
+              endDate?: string
+            }
+          default: {}
+        - name: isSubmitting
+          role: Indicates whether the form is currently being submitted
+          schema: boolean
+          default: false
+        - name: previewMode
+          role: Toggles the course preview mode
+          schema: boolean
+          default: false
+      actions:
+        - name: handleInputChange
+          intent: Update the courseForm state when input fields change
+          triggers:
+            - when user types in any input field
+            - when user selects an option from dropdowns
+        - name: handleImageUpload
+          intent: Process and store the uploaded course image
+          triggers:
+            - when user uploads an image file
+        - name: validateForm
+          intent: Check all form fields for validity and update formErrors
+          triggers:
+            - when user attempts to submit the form
+            - when user switches to preview mode
+        - name: togglePreviewMode
+          intent: Switch between edit and preview modes
+          triggers:
+            - when user clicks the preview button
+        - name: handleSubmit
+          intent: Process form submission to create a new course
+          triggers:
+            - when user clicks the 'Create Course' button
+          interactionWithBackend:
+            description: Sends a POST request to /api/courses with the courseForm data.
+              Handles file upload for the course image if present.
+        - name: saveDraft
+          intent: Save the current course data as a draft
+          triggers:
+            - when user clicks the 'Save Draft' button
+          interactionWithBackend:
+            description: Sends a POST request to /api/courses/drafts with the current
+              courseForm data.
+      globalStateVariablesAccessed:
+        auth: To verify that the user has teacher privileges
+    UV_CourseOverview:
+      slugs:
+        - name: course_uid
+          intent: Unique identifier for the course being viewed
+          required: true
+      stateVariables:
+        - name: courseDetails
+          role: Stores general information about the course
+          schema: |
+            {
+              uid: string,
+              name: string,
+              description: string,
+              teacher: {
+                uid: string,
+                name: string
+              },
+              gradeLevel: number,
+              subject: string,
+              startDate: string,
+              endDate: string,
+              enrollmentCount: number
+            }
+          default: null
+          mappingIfFromSource:
+            - source: slugs
+              name: course_uid
+        - name: modules
+          role: List of modules/units in the course
+          schema: |
+            Array<{
+              uid: string,
+              name: string,
+              description: string,
+              order: number,
+              contentItems: Array<{
+                uid: string,
+                title: string,
+                type: 'video' | 'document' | 'quiz' | 'assignment',
+                status: 'locked' | 'available' | 'completed'
+              }>
+            }>
+          default: []
+        - name: announcements
+          role: List of course announcements
+          schema: |
+            Array<{
+              uid: string,
+              title: string,
+              content: string,
+              date: string,
+              author: {
+                uid: string,
+                name: string
+              }
+            }>
+          default: []
+        - name: upcomingAssignments
+          role: List of upcoming assignments for the course
+          schema: |
+            Array<{
+              uid: string,
+              title: string,
+              dueDate: string,
+              type: 'homework' | 'quiz' | 'project'
+            }>
+          default: []
+        - name: userProgress
+          role: Current user's progress in the course (for students)
+          schema: |
+            {
+              overallProgress: number,
+              completedModules: number,
+              totalModules: number
+            }
+          default: null
+      actions:
+        - name: fetchCourseData
+          intent: Retrieve all necessary data for the course overview
+          triggers:
+            - on component mount
+            - when course_uid slug changes
+          interactionWithBackend:
+            description: Makes multiple API calls to fetch course details, modules,
+              announcements, and upcoming assignments using the course_uid.
+        - name: toggleModuleExpansion
+          intent: Expand or collapse a module in the course outline
+          triggers:
+            - when user clicks on a module header
+        - name: navigateToContent
+          intent: Navigate to a specific content item
+          triggers:
+            - when user clicks on a content item in a module
+        - name: createAnnouncement
+          intent: Create a new course announcement (teacher only)
+          triggers:
+            - when teacher clicks 'Create Announcement' button
+          interactionWithBackend:
+            description: Sends a POST request to /api/courses/{course_uid}/announcements
+              with the new announcement data.
+        - name: updateCourseProgress
+          intent: Update the user's course progress (student only)
+          triggers:
+            - when a student completes a content item
+          interactionWithBackend:
+            description: Sends a PUT request to /api/courses/{course_uid}/progress with the
+              updated progress data.
+      globalStateVariablesAccessed:
+        auth: To determine user role (teacher/student) and customize view
+        activeCourse: To update the active course in global state
+    UV_ContentUpload:
+      slugs:
+        - name: course_uid
+          intent: Unique identifier for the course to which content is being added
+          required: true
+        - name: module_uid
+          intent: Unique identifier for the module to which content is being added
+          required: false
+          default: null
+      stateVariables:
+        - name: uploadQueue
+          role: List of files queued for upload
+          schema: >
+            Array<{
+              uid: string,
+              file: File,
+              progress: number,
+              status: 'queued' | 'uploading' | 'completed' | 'error',
+              metadata: {
+                title: string,
+                description: string,
+                contentType: 'video' | 'document' | 'presentation' | 'audio' | 'other',
+                tags: Array<string>
+              }
+            }>
+          default: []
+        - name: selectedModule
+          role: Currently selected module for content assignment
+          schema: |
+            {
+              uid: string,
+              name: string
+            } | null
+          default: null
+          mappingIfFromSource:
+            - source: slugs
+              name: module_uid
+        - name: modules
+          role: List of available modules in the course
+          schema: |
+            Array<{
+              uid: string,
+              name: string
+            }>
+          default: []
+        - name: contentOrder
+          role: Order of content items within the selected module
+          schema: |
+            Array<string> # Array of content item UIDs
+          default: []
+      actions:
+        - name: handleFileDrop
+          intent: Process files dropped into the upload area
+          triggers:
+            - when files are dropped into the drop zone
+            - when files are selected via file picker
+        - name: updateFileMetadata
+          intent: Update metadata for a file in the upload queue
+          triggers:
+            - when user edits metadata for a queued file
+        - name: removeFileFromQueue
+          intent: Remove a file from the upload queue
+          triggers:
+            - when user clicks to remove a file from the queue
+        - name: selectModule
+          intent: Change the selected module for content assignment
+          triggers:
+            - when user selects a different module from the dropdown
+        - name: reorderContent
+          intent: Change the order of content items within a module
+          triggers:
+            - when user drags and drops content items to reorder
+        - name: uploadFiles
+          intent: Initiate the upload process for queued files
+          triggers:
+            - when user clicks the 'Upload' button
+          interactionWithBackend:
+            description: Sends multiple POST requests to /api/modules/{module_uid}/content
+              for each file in the queue. Updates upload progress in real-time.
+        - name: fetchModules
+          intent: Retrieve the list of modules for the course
+          triggers:
+            - on component mount
+          interactionWithBackend:
+            description: Sends a GET request to /api/courses/{course_uid}/modules to fetch
+              all modules in the course.
+      globalStateVariablesAccessed:
+        auth: To ensure the user has permission to upload content
+    UV_AssignmentCreation:
+      slugs:
+        - name: course_uid
+          intent: Unique identifier for the course to which the assignment belongs
+          required: true
+      stateVariables:
+        - name: assignmentForm
+          role: Stores the current state of the assignment creation form
+          schema: |
+            {
+              title: string,
+              description: string,
+              dueDate: string,
+              dueTime: string,
+              maxScore: number,
+              submissionType: 'file' | 'text' | 'both',
+              attachments: Array<File>,
+              rubric: Array<{
+                criterion: string,
+                points: number,
+                description: string
+              }>,
+              allowLateSubmissions: boolean,
+              lateSubmissionDeadline: string | null,
+              lateSubmissionPenalty: number | null
+            }
+          default:
+            title: ""
+            description: ""
+            dueDate: ""
+            dueTime: ""
+            maxScore: 100
+            submissionType: both
+            attachments: []
+            rubric: []
+            allowLateSubmissions: false
+            lateSubmissionDeadline: null
+            lateSubmissionPenalty: null
+        - name: formErrors
+          role: Stores validation errors for the form fields
+          schema: |
+            {
+              title?: string,
+              description?: string,
+              dueDate?: string,
+              dueTime?: string,
+              maxScore?: string,
+              rubric?: string
+            }
+          default: {}
+        - name: isSubmitting
+          role: Indicates whether the form is currently being submitted
+          schema: boolean
+          default: false
+        - name: previewMode
+          role: Toggles the assignment preview mode
+          schema: boolean
+          default: false
+      actions:
+        - name: handleInputChange
+          intent: Update the assignmentForm state when input fields change
+          triggers:
+            - when user types in any input field
+            - when user selects an option from dropdowns
+        - name: handleAttachmentUpload
+          intent: Process and store uploaded assignment attachments
+          triggers:
+            - when user uploads attachment files
+        - name: addRubricCriterion
+          intent: Add a new criterion to the rubric
+          triggers:
+            - when user clicks 'Add Criterion' in the rubric section
+        - name: removeRubricCriterion
+          intent: Remove a criterion from the rubric
+          triggers:
+            - when user clicks to remove a rubric criterion
+        - name: validateForm
+          intent: Check all form fields for validity and update formErrors
+          triggers:
+            - when user attempts to submit the form
+            - when user switches to preview mode
+        - name: togglePreviewMode
+          intent: Switch between edit and preview modes
+          triggers:
+            - when user clicks the preview button
+        - name: handleSubmit
+          intent: Process form submission to create a new assignment
+          triggers:
+            - when user clicks the 'Create Assignment' button
+          interactionWithBackend:
+            description: Sends a POST request to /api/courses/{course_uid}/assignments with
+              the assignmentForm data. Handles file uploads for attachments if
+              present.
+        - name: saveDraft
+          intent: Save the current assignment data as a draft
+          triggers:
+            - when user clicks the 'Save Draft' button
+          interactionWithBackend:
+            description: Sends a POST request to
+              /api/courses/{course_uid}/assignments/drafts with the current
+              assignmentForm data.
+      globalStateVariablesAccessed:
+        auth: To verify that the user has teacher privileges
+        activeCourse: To ensure the assignment is being created for the active course
+    UV_AssignmentSubmission:
+      slugs:
+        - name: assignment_uid
+          intent: Unique identifier for the assignment being submitted
+          required: true
+          default: ""
+      urlParams:
+        - name: draft_id
+          intent: ID of a saved draft, if applicable
+          required: false
+      stateVariables:
+        - name: assignmentDetails
+          role: Stores the details of the assignment
+          schema: |
+            {
+              uid: string,
+              title: string,
+              description: string,
+              due_date: number,
+              max_score: number,
+              submission_type: 'file' | 'text' | 'both',
+              file_types_allowed: string[],
+              max_file_size: number
+            }
+          default: null
+          mappingIfFromSource:
+            - source: globalAppState
+              name: currentAssignment
+        - name: submissionData
+          role: Stores the current submission data
+          schema: |
+            {
+              text: string,
+              files: File[]
+            }
+          default:
+            text: ""
+            files: []
+        - name: timeRemaining
+          role: Stores the time remaining until the submission deadline
+          schema: number
+          default: 0
+        - name: isSubmitting
+          role: Indicates if a submission is in progress
+          schema: boolean
+          default: false
+        - name: submissionHistory
+          role: Stores previous submissions if multiple attempts are allowed
+          schema: "Array<{ id: string, submitted_at: number, status: string }>"
+          default: []
+      actions:
+        - name: fetchAssignmentDetails
+          intent: Retrieves the assignment details from the server
+          triggers:
+            - On page load
+            - When assignment_uid changes
+          interactionWithBackend:
+            description: Calls the backend API to fetch assignment details using the
+              assignment_uid
+        - name: updateSubmissionText
+          intent: Updates the text part of the submission
+          triggers:
+            - When the user types in the text editor
+        - name: handleFileUpload
+          intent: Handles file selection and upload
+          triggers:
+            - When files are selected in the file input
+          interactionWithBackend:
+            description: Uploads files to the server and stores the returned file URLs
+        - name: saveDraft
+          intent: Saves the current submission as a draft
+          triggers:
+            - When the Save Draft button is clicked
+            - Automatically every 5 minutes
+          interactionWithBackend:
+            description: Sends the current submission data to the server to be saved as a
+              draft
+        - name: submitAssignment
+          intent: Submits the assignment for grading
+          triggers:
+            - When the Submit button is clicked and confirmed
+          interactionWithBackend:
+            description: Sends the final submission data to the server and handles the
+              response
+        - name: updateTimeRemaining
+          intent: Updates the time remaining until the submission deadline
+          triggers:
+            - Every minute
+            - On page load
+      globalStateVariablesAccessed:
+        auth: To get the current user's information and authentication status
+        activeCourse: To display the course context for the assignment
+    UV_GradingInterface:
+      slugs:
+        - name: assignment_uid
+          intent: Unique identifier for the assignment being graded
+          required: true
+          default: ""
+        - name: submission_uid
+          intent: Unique identifier for the specific submission being graded
+          required: true
+          default: ""
+      stateVariables:
+        - name: assignmentDetails
+          role: Stores the details of the assignment
+          schema: |
+            {
+              uid: string,
+              title: string,
+              description: string,
+              max_score: number,
+              rubric: Array<{
+                criterion: string,
+                max_score: number,
+                description: string
+              }>
+            }
+          default: null
+        - name: submissionData
+          role: Stores the data of the submission being graded
+          schema: |
+            {
+              uid: string,
+              student_uid: string,
+              student_name: string,
+              submitted_at: number,
+              text: string,
+              file_urls: string[]
+            }
+          default: null
+        - name: gradingData
+          role: Stores the current grading information
+          schema: |
+            {
+              score: number,
+              feedback: string,
+              rubric_scores: Array<{
+                criterion_id: string,
+                score: number
+              }>
+            }
+          default:
+            score: 0
+            feedback: ""
+            rubric_scores: []
+        - name: annotationData
+          role: Stores annotations made on submitted files
+          schema: "Array<{ file_url: string, annotations: Array<{ x: number, y: number,
+            text: string }> }>"
+          default: []
+      actions:
+        - name: fetchAssignmentAndSubmission
+          intent: Retrieves the assignment details and submission data from the server
+          triggers:
+            - On page load
+          interactionWithBackend:
+            description: Calls the backend API to fetch assignment and submission details
+              using the assignment_uid and submission_uid
+        - name: updateScore
+          intent: Updates the overall score or individual rubric item scores
+          triggers:
+            - When a score input is changed
+        - name: updateFeedback
+          intent: Updates the feedback text
+          triggers:
+            - When the feedback text area is changed
+        - name: addAnnotation
+          intent: Adds an annotation to a submitted file
+          triggers:
+            - When an annotation is created on the file viewer
+        - name: saveGrade
+          intent: Saves the current grading data without publishing to the student
+          triggers:
+            - When the Save button is clicked
+          interactionWithBackend:
+            description: Sends the current grading data to the server to be saved
+        - name: publishGrade
+          intent: Publishes the grade and feedback to the student
+          triggers:
+            - When the Publish Grade button is clicked and confirmed
+          interactionWithBackend:
+            description: Sends the final grading data to the server and marks it as
+              published
+        - name: requestRevision
+          intent: Requests a revision from the student
+          triggers:
+            - When the Request Revision button is clicked
+          interactionWithBackend:
+            description: Sends a revision request to the server, which notifies the student
+      globalStateVariablesAccessed:
+        auth: To get the current teacher's information and ensure they have grading
+          permissions
+        activeCourse: To display the course context for the assignment
+    UV_StudentProgress:
+      slugs:
+        - name: student_uid
+          intent: Unique identifier for the student whose progress is being viewed
+          required: true
+          default: ""
+      urlParams:
+        - name: start_date
+          intent: Start date for filtering progress data
+          required: false
+        - name: end_date
+          intent: End date for filtering progress data
+          required: false
+      stateVariables:
+        - name: studentInfo
+          role: Stores basic information about the student
+          schema: |
+            {
+              uid: string,
+              full_name: string,
+              grade_level: number,
+              profile_picture_url: string
+            }
+          default: null
+        - name: overallProgress
+          role: Stores overall progress metrics
+          schema: |
+            {
+              gpa: number,
+              total_courses: number,
+              completed_courses: number,
+              overall_grade: number
+            }
+          default: null
+        - name: courseProgress
+          role: Stores progress data for each course
+          schema: "Array<{ course_uid: string, course_name: string, grade: number,
+            completion_percentage: number, assignments: Array<{ uid: string,
+            title: string, score: number, max_score: number, submitted_at:
+            number }> }>"
+          default: []
+        - name: attendanceData
+          role: Stores attendance records
+          schema: "Array<{ date: string, status: 'present' | 'absent' | 'late' }>"
+          default: []
+        - name: selectedTimeRange
+          role: Stores the currently selected time range for filtering data
+          schema: "{ start_date: string, end_date: string }"
+          default: null
+      actions:
+        - name: fetchStudentProgress
+          intent: Retrieves the student's progress data from the server
+          triggers:
+            - On page load
+            - When time range is changed
+          interactionWithBackend:
+            description: Calls the backend API to fetch comprehensive progress data for the
+              student, optionally filtered by date range
+        - name: updateTimeRange
+          intent: Updates the selected time range for data filtering
+          triggers:
+            - When date range inputs are changed
+        - name: exportProgressReport
+          intent: Generates and downloads a progress report
+          triggers:
+            - When the Export Report button is clicked
+          interactionWithBackend:
+            description: Requests the server to generate a downloadable progress report PDF
+        - name: toggleCourseDetails
+          intent: Expands or collapses detailed view for a specific course
+          triggers:
+            - When a course row is clicked
+      globalStateVariablesAccessed:
+        auth: To determine the user's role (student, teacher, or guardian) and adjust
+          the view accordingly
+    UV_MessagingCenter:
+      stateVariables:
+        - name: conversations
+          role: Stores the list of conversations
+          schema: "Array<{ uid: string, participants: Array<{ uid: string, name: string
+            }>, last_message: { content: string, sent_at: number },
+            unread_count: number }>"
+          default: []
+        - name: activeConversation
+          role: Stores the currently open conversation
+          schema: |
+            {
+              uid: string,
+              participants: Array<{ uid: string, name: string }>,
+              messages: Array<{
+                uid: string,
+                sender_uid: string,
+                content: string,
+                sent_at: number,
+                read_at: number | null
+              }>
+            }
+          default: null
+        - name: newMessageContent
+          role: Stores the content of a new message being composed
+          schema: string
+          default: ""
+        - name: attachments
+          role: Stores files attached to a new message
+          schema: Array<File>
+          default: []
+        - name: searchQuery
+          role: Stores the current search query for filtering conversations
+          schema: string
+          default: ""
+      actions:
+        - name: fetchConversations
+          intent: Retrieves the list of conversations from the server
+          triggers:
+            - On page load
+            - Periodically to check for updates
+          interactionWithBackend:
+            description: Calls the backend API to fetch the user's conversations, including
+              unread counts
+        - name: openConversation
+          intent: Opens a specific conversation and loads its messages
+          triggers:
+            - When a conversation is selected from the list
+          interactionWithBackend:
+            description: Fetches detailed conversation data and message history from the
+              server
+        - name: sendMessage
+          intent: Sends a new message in the active conversation
+          triggers:
+            - When the Send button is clicked or Enter is pressed
+          interactionWithBackend:
+            description: Sends the message content and any attachments to the server and
+              updates the local conversation state
+        - name: uploadAttachment
+          intent: Handles file attachment for a new message
+          triggers:
+            - When files are selected in the attachment input
+          interactionWithBackend:
+            description: Uploads files to the server and stores the returned file URLs
+        - name: searchConversations
+          intent: Filters conversations based on the search query
+          triggers:
+            - When the search input changes
+        - name: createNewConversation
+          intent: Initiates a new conversation
+          triggers:
+            - When the New Conversation button is clicked
+          interactionWithBackend:
+            description: Creates a new conversation on the server with selected participants
+      globalStateVariablesAccessed:
+        auth: To get the current user's information for sending messages
+        notifications: To update unread message counts
+    UV_VideoConference:
+      slugs:
+        - name: meeting_id
+          intent: Unique identifier for the video conference session
+          required: true
+          default: ""
+      stateVariables:
+        - name: participantsList
+          role: Stores the list of participants in the conference
+          schema: "Array<{ uid: string, name: string, role: 'host' | 'participant',
+            video_enabled: boolean, audio_enabled: boolean }>"
+          default: []
+        - name: chatMessages
+          role: Stores the chat messages for the conference
+          schema: "Array<{ uid: string, sender_uid: string, sender_name: string, content:
+            string, timestamp: number }>"
+          default: []
+        - name: userSettings
+          role: Stores the current user's video conference settings
+          schema: |
+            {
+              video_enabled: boolean,
+              audio_enabled: boolean,
+              screen_sharing: boolean
+            }
+          default:
+            video_enabled: true
+            audio_enabled: true
+            screen_sharing: false
+        - name: conferenceState
+          role: Stores the current state of the conference
+          schema: |
+            {
+              is_recording: boolean,
+              screen_share_active: boolean,
+              active_speaker_uid: string | null
+            }
+          default:
+            is_recording: false
+            screen_share_active: false
+            active_speaker_uid: null
+      actions:
+        - name: joinConference
+          intent: Connects the user to the video conference
+          triggers:
+            - On page load
+          interactionWithBackend:
+            description: Establishes connection with the video conferencing service and
+              joins the specified meeting
+        - name: toggleAudio
+          intent: Mutes or unmutes the user's audio
+          triggers:
+            - When the audio toggle button is clicked
+          interactionWithBackend:
+            description: Updates the user's audio state in the video conference and on the
+              server
+        - name: toggleVideo
+          intent: Enables or disables the user's video
+          triggers:
+            - When the video toggle button is clicked
+          interactionWithBackend:
+            description: Updates the user's video state in the video conference and on the
+              server
+        - name: startScreenShare
+          intent: Begins screen sharing
+          triggers:
+            - When the screen share button is clicked
+          interactionWithBackend:
+            description: Initiates screen sharing through the video conferencing service
+        - name: sendChatMessage
+          intent: Sends a chat message in the conference
+          triggers:
+            - When a chat message is submitted
+          interactionWithBackend:
+            description: Sends the chat message to all participants through the video
+              conferencing service
+        - name: toggleRecording
+          intent: Starts or stops recording the conference
+          triggers:
+            - When the record button is clicked (host only)
+          interactionWithBackend:
+            description: Toggles recording state on the video conferencing service and
+              updates server state
+        - name: removeParticipant
+          intent: Removes a participant from the conference
+          triggers:
+            - When the remove participant action is selected (host only)
+          interactionWithBackend:
+            description: Removes the specified participant from the video conference and
+              updates the server
+      globalStateVariablesAccessed:
+        auth: To get the current user's information and role in the conference
+        activeCourse: To display the course context for the video conference, if applicable
+  shared:
+    GV_TopNavigation:
+      slugs?: null
+      urlParams?: null
+      stateVariables?:
+        - name: activeMenuItem
+          role: Keeps track of the currently active menu item for highlighting purposes
+          schema: string
+          default: "'dashboard'"
+          mappingIfFromSource?:
+            - source: globalAppState
+              name: auth.user.user_type
+      actions?:
+        - name: handleMenuItemClick
+          intent: Update the active menu item and navigate to the selected page
+          triggers:
+            - When a menu item is clicked
+        - name: handleNotificationClick
+          intent: Open the notifications panel
+          triggers:
+            - When the notification bell icon is clicked
+        - name: handleProfileDropdownToggle
+          intent: Toggle the visibility of the profile dropdown menu
+          triggers:
+            - When the user avatar or name is clicked
+        - name: handleLogout
+          intent: Log out the user and redirect to the login page
+          triggers:
+            - When the 'Log out' option in the profile dropdown is clicked
+          interactionWithBackend?:
+            description: Calls the backend API to invalidate the user's session token and
+              clears the local storage
+      globalStateVariablesAccessed?:
+        auth: To get the user's information and authentication status
+        notifications: To display the unread notification count
+    GV_Footer:
+      slugs?: null
+      urlParams?: null
+      stateVariables?:
+        - name: selectedLanguage
+          role: Stores the currently selected language for the application
+          schema: string
+          default: "'en'"
+          mappingIfFromSource?:
+            - source: globalAppState
+              name: user.language
+      actions?:
+        - name: handleLanguageChange
+          intent: Change the application's language based on user selection
+          triggers:
+            - When a language option is selected from the language dropdown
+          interactionWithBackend?:
+            description: Calls the backend API to update the user's language preference and
+              retrieves updated content
+      globalStateVariablesAccessed?:
+        auth: To determine if certain footer links should be displayed based on user
+          type
+    GV_Notifications:
+      slugs?: null
+      urlParams?: null
+      stateVariables?:
+        - name: isOpen
+          role: Controls the visibility of the notifications panel
+          schema: boolean
+          default: "false"
+        - name: notifications
+          role: Stores the list of notifications to display
+          schema: "Array<{ uid: string, type: string, content: string, is_read: boolean,
+            created_at: number }>"
+          default: "[]"
+          mappingIfFromSource?:
+            - source: globalAppState
+              name: notifications.items
+      actions?:
+        - name: handleNotificationClick
+          intent: Navigate to the relevant page for the clicked notification
+          triggers:
+            - When a specific notification item is clicked
+        - name: handleMarkAllAsRead
+          intent: Mark all notifications as read
+          triggers:
+            - When the 'Mark all as read' button is clicked
+          interactionWithBackend?:
+            description: Calls the backend API to update the read status of all
+              notifications for the user
+        - name: handleSeeAllNotifications
+          intent: Navigate to the full notifications page
+          triggers:
+            - When the 'See all notifications' link is clicked
+        - name: fetchNotifications
+          intent: Retrieve the latest notifications from the server
+          triggers:
+            - When the notifications panel is opened
+            - At regular intervals while the panel is open
+          interactionWithBackend?:
+            description: Calls the backend API to fetch the latest notifications for the
+              user
+      globalStateVariablesAccessed?:
+        auth: To get the user's ID for fetching notifications
+        notifications: To display the current list of notifications and unread count

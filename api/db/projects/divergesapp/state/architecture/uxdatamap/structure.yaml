@@ -1,0 +1,157 @@
+_updated: 1731089321258
+_processing: false
+key: uxdatamap.structure
+data:
+  root:
+    globalState:
+      auth:
+        schema: |
+          {
+            user: {
+              uid: string,
+              email: string,
+              full_name: string,
+              user_type: 'teacher' | 'student' | 'guardian'
+            } | null,
+            token: string | null,
+            isAuthenticated: boolean
+          }
+        default:
+          user: null
+          token: null
+          isAuthenticated: false
+        example: |
+          {
+            user: {
+              uid: "123456",
+              email: "john@example.com",
+              full_name: "John Doe",
+              user_type: "teacher"
+            },
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            isAuthenticated: true
+          }
+      notifications:
+        schema: |
+          {
+            items: Array<{
+              uid: string,
+              type: string,
+              content: string,
+              is_read: boolean,
+              created_at: number
+            }>,
+            unreadCount: number
+          }
+        default:
+          items: []
+          unreadCount: 0
+        example: |
+          {
+            items: [
+              {
+                uid: "notif1",
+                type: "new_assignment",
+                content: "New assignment posted in Math 101",
+                is_read: false,
+                created_at: 1631234567890
+              }
+            ],
+            unreadCount: 1
+          }
+      activeCourse:
+        schema: |
+          {
+            uid: string,
+            name: string,
+            description: string
+          } | null
+        default: null
+        example: |
+          {
+            uid: "course123",
+            name: "Introduction to Biology",
+            description: "A comprehensive introduction to biological concepts"
+          }
+      websocket:
+        schema: |
+          {
+            isConnected: boolean
+          }
+        default:
+          isConnected: false
+        example:
+          isConnected: true
+  routes:
+    - description: Public landing page for unauthenticated users
+      path: /
+      view: UV_Landing
+    - description: Login page for all user types
+      path: /login
+      view: UV_Login
+    - description: Registration page for new users
+      path: /register
+      view: UV_Registration
+    - description: Main dashboard for authenticated users
+      path: /dashboard
+      view: UV_Dashboard_Teacher, UV_Dashboard_Student, or UV_Dashboard_Guardian
+    - description: List of courses
+      path: /courses
+      view: UV_CourseOverview
+    - description: Course creation page for teachers
+      path: /courses/create
+      view: UV_CourseCreation
+    - description: Detailed view of a specific course
+      path: /courses/:course_uid
+      view: UV_CourseOverview
+      slugs:
+        - name: course_uid
+          intent: Unique identifier for the course
+    - description: Content upload page for a specific course
+      path: /courses/:course_uid/content/upload
+      view: UV_ContentUpload
+      slugs:
+        - name: course_uid
+          intent: Unique identifier for the course
+    - description: Assignment creation page for a specific course
+      path: /courses/:course_uid/assignments/create
+      view: UV_AssignmentCreation
+      slugs:
+        - name: course_uid
+          intent: Unique identifier for the course
+    - description: Assignment submission page for students
+      path: /assignments/:assignment_uid/submit
+      view: UV_AssignmentSubmission
+      slugs:
+        - name: assignment_uid
+          intent: Unique identifier for the assignment
+    - description: Grading interface for teachers
+      path: /assignments/:assignment_uid/grade
+      view: UV_GradingInterface
+      slugs:
+        - name: assignment_uid
+          intent: Unique identifier for the assignment
+    - description: Student progress page
+      path: /students/:student_uid/progress
+      view: UV_StudentProgress
+      slugs:
+        - name: student_uid
+          intent: Unique identifier for the student
+      urlParams:
+        - name: start_date
+          intent: Start date for filtering progress data
+          example: 2023-09-01
+          required: false
+        - name: end_date
+          intent: End date for filtering progress data
+          example: 2023-12-31
+          required: false
+    - description: Messaging center for all users
+      path: /messages
+      view: UV_MessagingCenter
+    - description: Video conference page
+      path: /video-conference/:meeting_id
+      view: UV_VideoConference
+      slugs:
+        - name: meeting_id
+          intent: Unique identifier for the video conference session

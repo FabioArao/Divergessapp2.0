@@ -1,0 +1,788 @@
+_updated: 1731089299253
+_processing: false
+key: pm.uxdmd
+data: >-
+  # Frontend App Architecture Analysis Document for DivergesiApp
+
+
+  ## Table of Contents
+
+
+  1. Introduction
+
+  2. App Structure
+     2.1. Routes
+     2.2. Views
+     2.3. Authentication Restrictions
+  3. Data Flow and State Management
+     3.1. Global App State
+     3.2. View-Specific State
+  4. User Journeys
+
+  5. Detailed View Analysis
+     5.1. Global Shared Views
+     5.2. Unique Views
+  6. URL Parameters and Slugs
+
+  7. Props and Data Requirements
+
+  8. Authentication and Authorization
+
+  9. Real-time Features
+
+  10. Conclusion
+
+
+  ## 1. Introduction
+
+
+  This document provides a comprehensive analysis of the frontend architecture
+  for DivergesiApp, an interactive educational platform designed to facilitate
+  seamless communication and collaboration between teachers, students, and
+  guardians. The analysis covers the app structure, data flow, user journeys,
+  and detailed view specifications to guide the development of a robust and
+  user-friendly frontend application.
+
+
+  ## 2. App Structure
+
+
+  ### 2.1. Routes
+
+
+  | Route | View | Auth Restriction |
+
+  |-------|------|------------------|
+
+  | / | UV_Landing | Public |
+
+  | /login | UV_Login | Public |
+
+  | /register | UV_Registration | Public |
+
+  | /dashboard | UV_Dashboard_Teacher, UV_Dashboard_Student, or
+  UV_Dashboard_Guardian | Authenticated |
+
+  | /courses | UV_CourseOverview (List) | Authenticated |
+
+  | /courses/create | UV_CourseCreation | Authenticated (Teacher only) |
+
+  | /courses/:course_uid | UV_CourseOverview | Authenticated |
+
+  | /courses/:course_uid/content/upload | UV_ContentUpload | Authenticated
+  (Teacher only) |
+
+  | /courses/:course_uid/assignments/create | UV_AssignmentCreation |
+  Authenticated (Teacher only) |
+
+  | /assignments/:assignment_uid/submit | UV_AssignmentSubmission |
+  Authenticated (Student only) |
+
+  | /assignments/:assignment_uid/grade | UV_GradingInterface | Authenticated
+  (Teacher only) |
+
+  | /students/:student_uid/progress | UV_StudentProgress | Authenticated |
+
+  | /messages | UV_MessagingCenter | Authenticated |
+
+  | /video-conference/:meeting_id | UV_VideoConference | Authenticated |
+
+
+  ### 2.2. Views
+
+
+  The app consists of two types of views:
+
+
+  1. Global Shared Views (GV_*):
+     - GV_TopNavigation
+     - GV_Footer
+     - GV_Notifications
+
+  2. Unique Views (UV_*):
+     - UV_Landing
+     - UV_Login
+     - UV_Registration
+     - UV_Dashboard_Teacher
+     - UV_Dashboard_Student
+     - UV_Dashboard_Guardian
+     - UV_CourseCreation
+     - UV_CourseOverview
+     - UV_ContentUpload
+     - UV_AssignmentCreation
+     - UV_AssignmentSubmission
+     - UV_GradingInterface
+     - UV_StudentProgress
+     - UV_MessagingCenter
+     - UV_VideoConference
+
+  ### 2.3. Authentication Restrictions
+
+
+  - Public routes: /, /login, /register
+
+  - Authenticated routes: All other routes
+
+  - Role-based restrictions:
+    - Teacher-only: /courses/create, /courses/:course_uid/content/upload, /courses/:course_uid/assignments/create, /assignments/:assignment_uid/grade
+    - Student-only: /assignments/:assignment_uid/submit
+    - Guardian-only: No specific restrictions, but access to student data is limited to associated students
+
+  ## 3. Data Flow and State Management
+
+
+  ### 3.1. Global App State
+
+
+  The global app state should be managed in a single store (e.g., Redux store)
+  and include the following:
+
+
+  1. Authentication state:
+     - user: { uid, email, full_name, user_type }
+     - token: string
+     - isAuthenticated: boolean
+
+  2. Notifications:
+     - notifications: array of { uid, type, content, is_read, created_at }
+     - unreadCount: number
+
+  3. Active course (for navigation purposes):
+     - activeCourse: { uid, name, description }
+
+  4. WebSocket connection status:
+     - isConnected: boolean
+
+  Example global state structure:
+
+
+  ```typescript
+
+  interface GlobalState {
+    auth: {
+      user: {
+        uid: string;
+        email: string;
+        full_name: string;
+        user_type: 'teacher' | 'student' | 'guardian';
+      } | null;
+      token: string | null;
+      isAuthenticated: boolean;
+    };
+    notifications: {
+      items: Array<{
+        uid: string;
+        type: string;
+        content: string;
+        is_read: boolean;
+        created_at: number;
+      }>;
+      unreadCount: number;
+    };
+    activeCourse: {
+      uid: string;
+      name: string;
+      description: string;
+    } | null;
+    websocket: {
+      isConnected: boolean;
+    };
+  }
+
+  ```
+
+
+  ### 3.2. View-Specific State
+
+
+  Each view will have its own local state to manage view-specific data and UI
+  interactions. These will be detailed in the "Detailed View Analysis" section.
+
+
+  ## 4. User Journeys
+
+
+  1. Teacher Journey:
+     - Log in
+     - View dashboard (UV_Dashboard_Teacher)
+     - Create a new course (UV_CourseCreation)
+     - Upload course content (UV_ContentUpload)
+     - Create assignments (UV_AssignmentCreation)
+     - Grade submitted assignments (UV_GradingInterface)
+     - View student progress (UV_StudentProgress)
+     - Communicate with students and guardians (UV_MessagingCenter)
+
+  2. Student Journey:
+     - Log in
+     - View dashboard (UV_Dashboard_Student)
+     - Access course materials (UV_CourseOverview)
+     - Submit assignments (UV_AssignmentSubmission)
+     - View grades and progress (UV_StudentProgress)
+     - Communicate with teachers (UV_MessagingCenter)
+
+  3. Guardian Journey:
+     - Log in
+     - View dashboard (UV_Dashboard_Guardian)
+     - Monitor associated students' progress (UV_StudentProgress)
+     - Communicate with teachers (UV_MessagingCenter)
+
+  ## 5. Detailed View Analysis
+
+
+  ### 5.1. Global Shared Views
+
+
+  #### GV_TopNavigation
+
+
+  State:
+
+  - activeMenuItem: string
+
+
+  Actions/Functions:
+
+  - handleMenuItemClick(item: string): void
+
+  - handleNotificationClick(): void
+
+  - handleProfileDropdownToggle(): void
+
+  - handleLogout(): void
+
+
+  #### GV_Footer
+
+
+  State: None
+
+
+  Actions/Functions:
+
+  - handleLanguageChange(language: string): void
+
+
+  #### GV_Notifications
+
+
+  State:
+
+  - isOpen: boolean
+
+  - notifications: array (from global state)
+
+
+  Actions/Functions:
+
+  - handleNotificationClick(notification: Notification): void
+
+  - handleMarkAllAsRead(): void
+
+  - handleSeeAllNotifications(): void
+
+
+  ### 5.2. Unique Views
+
+
+  #### UV_Landing
+
+
+  State: None
+
+
+  Actions/Functions:
+
+  - handleSignUpClick(): void
+
+  - handleLearnMoreClick(): void
+
+
+  #### UV_Login
+
+
+  State:
+
+  - email: string
+
+  - password: string
+
+  - rememberMe: boolean
+
+  - isLoading: boolean
+
+  - error: string | null
+
+
+  Actions/Functions:
+
+  - handleInputChange(event: InputEvent): void
+
+  - handleSubmit(event: FormEvent): void
+
+  - handleForgotPassword(): void
+
+
+  #### UV_Registration
+
+
+  State:
+
+  - formData: {
+      full_name: string,
+      email: string,
+      password: string,
+      confirm_password: string,
+      user_type: 'teacher' | 'student' | 'guardian',
+      grade_level?: number,
+      school_name?: string,
+      associated_student?: string
+    }
+  - isLoading: boolean
+
+  - error: string | null
+
+
+  Actions/Functions:
+
+  - handleInputChange(event: InputEvent): void
+
+  - handleSubmit(event: FormEvent): void
+
+  - handleUserTypeChange(type: string): void
+
+
+  #### UV_Dashboard_Teacher
+
+
+  State:
+
+  - stats: {
+      activeCourses: number,
+      pendingAssignments: number
+    }
+  - upcomingEvents: array
+
+  - recentActivity: array
+
+
+  Actions/Functions:
+
+  - fetchDashboardData(): void
+
+  - handleCreateCourseClick(): void
+
+  - handleCreateAssignmentClick(): void
+
+
+  #### UV_Dashboard_Student
+
+
+  State:
+
+  - enrolledCourses: array
+
+  - upcomingAssignments: array
+
+  - recentGrades: array
+
+
+  Actions/Functions:
+
+  - fetchDashboardData(): void
+
+  - handleCourseClick(courseId: string): void
+
+  - handleAssignmentClick(assignmentId: string): void
+
+
+  #### UV_Dashboard_Guardian
+
+
+  State:
+
+  - associatedStudents: array
+
+  - studentProgress: object
+
+  - upcomingEvents: array
+
+
+  Actions/Functions:
+
+  - fetchDashboardData(): void
+
+  - handleStudentClick(studentId: string): void
+
+  - handleEventClick(eventId: string): void
+
+
+  #### UV_CourseCreation
+
+
+  State:
+
+  - formData: {
+      name: string,
+      description: string,
+      grade_level: number,
+      subject: string,
+      start_date: string,
+      end_date: string,
+      image: File | null
+    }
+  - isLoading: boolean
+
+  - error: string | null
+
+
+  Actions/Functions:
+
+  - handleInputChange(event: InputEvent): void
+
+  - handleImageUpload(event: FileEvent): void
+
+  - handleSubmit(event: FormEvent): void
+
+  - handleSaveDraft(): void
+
+
+  #### UV_CourseOverview
+
+
+  State:
+
+  - courseDetails: object
+
+  - modules: array
+
+  - announcements: array
+
+  - upcomingAssignments: array
+
+
+  Actions/Functions:
+
+  - fetchCourseData(): void
+
+  - handleModuleClick(moduleId: string): void
+
+  - handleAssignmentClick(assignmentId: string): void
+
+  - handleAnnouncementCreate(): void (teacher only)
+
+
+  #### UV_ContentUpload
+
+
+  State:
+
+  - selectedFiles: array
+
+  - uploadProgress: number
+
+  - selectedModule: string | null
+
+  - metadata: {
+      title: string,
+      description: string,
+      tags: array
+    }
+
+  Actions/Functions:
+
+  - handleFileSelect(event: FileEvent): void
+
+  - handleMetadataChange(event: InputEvent): void
+
+  - handleModuleSelect(moduleId: string): void
+
+  - handleUpload(): void
+
+  - handleCancel(): void
+
+
+  #### UV_AssignmentCreation
+
+
+  State:
+
+  - formData: {
+      title: string,
+      description: string,
+      due_date: string,
+      max_score: number,
+      submission_type: 'file' | 'text' | 'both'
+    }
+  - attachments: array
+
+  - rubric: array
+
+
+  Actions/Functions:
+
+  - handleInputChange(event: InputEvent): void
+
+  - handleAttachmentUpload(event: FileEvent): void
+
+  - handleRubricChange(rubric: array): void
+
+  - handleSubmit(event: FormEvent): void
+
+  - handleSaveDraft(): void
+
+
+  #### UV_AssignmentSubmission
+
+
+  State:
+
+  - assignmentDetails: object
+
+  - submission: {
+      text: string,
+      files: array
+    }
+  - timeRemaining: number
+
+
+  Actions/Functions:
+
+  - fetchAssignmentDetails(): void
+
+  - handleTextChange(event: InputEvent): void
+
+  - handleFileUpload(event: FileEvent): void
+
+  - handleSubmit(event: FormEvent): void
+
+  - handleSaveDraft(): void
+
+
+  #### UV_GradingInterface
+
+
+  State:
+
+  - submission: object
+
+  - rubric: array
+
+  - score: number
+
+  - feedback: string
+
+  - annotationData: object
+
+
+  Actions/Functions:
+
+  - fetchSubmissionData(): void
+
+  - handleScoreChange(event: InputEvent): void
+
+  - handleFeedbackChange(event: InputEvent): void
+
+  - handleAnnotation(annotation: object): void
+
+  - handleGradeSubmit(): void
+
+  - handleRequestRevision(): void
+
+
+  #### UV_StudentProgress
+
+
+  State:
+
+  - studentDetails: object
+
+  - courseProgress: array
+
+  - grades: object
+
+  - attendanceRecord: array
+
+
+  Actions/Functions:
+
+  - fetchStudentProgressData(): void
+
+  - handleCourseFilter(courseId: string): void
+
+  - handleDateRangeChange(startDate: string, endDate: string): void
+
+  - handleExportReport(): void
+
+
+  #### UV_MessagingCenter
+
+
+  State:
+
+  - conversations: array
+
+  - activeConversation: object | null
+
+  - messageText: string
+
+  - attachments: array
+
+
+  Actions/Functions:
+
+  - fetchConversations(): void
+
+  - handleConversationSelect(conversationId: string): void
+
+  - handleMessageChange(event: InputEvent): void
+
+  - handleAttachmentUpload(event: FileEvent): void
+
+  - handleSendMessage(): void
+
+  - handleCreateNewConversation(): void
+
+
+  #### UV_VideoConference
+
+
+  State:
+
+  - participants: array
+
+  - isMuted: boolean
+
+  - isVideoOn: boolean
+
+  - isScreenSharing: boolean
+
+  - chatMessages: array
+
+
+  Actions/Functions:
+
+  - handleToggleMute(): void
+
+  - handleToggleVideo(): void
+
+  - handleToggleScreenShare(): void
+
+  - handleSendChatMessage(message: string): void
+
+  - handleEndCall(): void
+
+  - handleParticipantKick(participantId: string): void (host only)
+
+
+  ## 6. URL Parameters and Slugs
+
+
+  1. Course pages:
+     - /courses/:course_uid
+     - URL params: None
+     - Slug: course_uid (string)
+
+  2. Assignment pages:
+     - /assignments/:assignment_uid/submit
+     - /assignments/:assignment_uid/grade
+     - URL params: None
+     - Slug: assignment_uid (string)
+
+  3. Student progress:
+     - /students/:student_uid/progress
+     - URL params: 
+       - start_date (optional): string (YYYY-MM-DD)
+       - end_date (optional): string (YYYY-MM-DD)
+     - Slug: student_uid (string)
+
+  4. Video conference:
+     - /video-conference/:meeting_id
+     - URL params: None
+     - Slug: meeting_id (string)
+
+  ## 7. Props and Data Requirements
+
+
+  Each view will require specific props and data to function properly. Here are
+  some key examples:
+
+
+  1. UV_CourseOverview:
+     - Props: course_uid (string)
+     - Required data: 
+       - Course details (name, description, grade_level, subject)
+       - Modules list
+       - Announcements
+       - Upcoming assignments
+
+  2. UV_AssignmentSubmission:
+     - Props: assignment_uid (string)
+     - Required data:
+       - Assignment details (title, description, due_date, max_score, submission_type)
+       - Student's previous submissions (if any)
+
+  3. UV_GradingInterface:
+     - Props: assignment_uid (string), submission_uid (string)
+     - Required data:
+       - Assignment details
+       - Student submission (including files if applicable)
+       - Rubric (if created for the assignment)
+       - Previous grades and feedback (if previously graded)
+
+  4. UV_StudentProgress:
+     - Props: student_uid (string)
+     - Required data:
+       - Student details
+       - Enrolled courses and progress for each
+       - Grades for all assignments
+       - Attendance record (if tracked)
+
+  ## 8. Authentication and Authorization
+
+
+  The app should implement a JWT-based authentication system:
+
+
+  1. On login/registration success, store the JWT token in the global app state
+  and local storage.
+
+  2. Include the JWT token in the Authorization header for all authenticated API
+  requests.
+
+  3. Implement an interceptor to handle token expiration and refresh.
+
+  4. Use role-based access control to restrict access to certain views and
+  actions based on the user's role (teacher, student, or guardian).
+
+
+  ## 9. Real-time Features
+
+
+  Implement WebSocket connections for real-time features:
+
+
+  1. New message notifications in UV_MessagingCenter
+
+  2. Live updates in UV_VideoConference
+
+  3. Real-time notifications for new announcements, assignment grades, and
+  course updates
+
+
+  WebSocket events to handle:
+
+  - new_message
+
+  - new_notification
+
+  - progress_update
+
+
+  ## 10. Conclusion
+
+
+  This frontend app architecture analysis provides a comprehensive overview of
+  the DivergesiApp's structure, data flow, and user interactions. By following
+  this architecture, developers can create a cohesive, efficient, and
+  user-friendly application that meets the needs of teachers, students, and
+  guardians in an interactive educational platform.

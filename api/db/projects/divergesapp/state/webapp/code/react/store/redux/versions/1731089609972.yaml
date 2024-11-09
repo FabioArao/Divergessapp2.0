@@ -1,0 +1,345 @@
+_updated: 1731089651373
+_processing: false
+key: webapp.react.store.redux.1731089609972
+data:
+  analysis: >-
+    Analysis for DivergesiApp Redux Store:
+
+
+    1. Global State Structure:
+       - auth: Manages user authentication state
+       - notifications: Handles user notifications
+       - active_course: Tracks the currently active course
+       - websocket: Manages WebSocket connection status
+
+    2. Slices:
+       - authSlice: Handles authentication-related actions and state
+       - notificationsSlice: Manages notification-related actions and state
+       - activeCourseSlice: Handles active course selection and state
+       - websocketSlice: Manages WebSocket connection state
+
+    3. Thunks:
+       - loginThunk: Handles user login
+       - logoutThunk: Handles user logout
+       - fetchNotificationsThunk: Retrieves user notifications
+       - markNotificationAsReadThunk: Updates notification read status
+       - connectWebSocketThunk: Establishes WebSocket connection
+
+    4. WebSocket Integration:
+       - Implement middleware to handle WebSocket events
+       - Handle real-time updates for notifications and progress
+
+    5. Persistence:
+       - Use redux-persist to persist auth state in localStorage
+
+    6. API Integration:
+       - Use axios for API calls within thunks
+
+    This structure will provide a comprehensive global state management solution
+    for DivergesiApp, handling authentication, notifications, course selection,
+    and real-time updates through WebSocket integration.
+  tsx: >-
+    import { configureStore, createSlice, createAsyncThunk, PayloadAction } from
+    '@reduxjs/toolkit';
+
+    import { persistStore, persistReducer } from 'redux-persist';
+
+    import storage from 'redux-persist/lib/storage';
+
+    import { io, Socket } from 'socket.io-client';
+
+    import axios from 'axios';
+
+
+    // Types
+
+    interface User {
+      uid: string;
+      email: string;
+      full_name: string;
+      user_type: 'teacher' | 'student' | 'guardian';
+    }
+
+
+    interface AuthState {
+      user: User | null;
+      token: string | null;
+      is_authenticated: boolean;
+    }
+
+
+    interface Notification {
+      uid: string;
+      type: string;
+      content: string;
+      is_read: boolean;
+      created_at: number;
+    }
+
+
+    interface NotificationsState {
+      items: Notification[];
+      unread_count: number;
+    }
+
+
+    interface ActiveCourse {
+      uid: string;
+      name: string;
+      description: string;
+    }
+
+
+    interface WebSocketState {
+      is_connected: boolean;
+    }
+
+
+    interface RootState {
+      auth: AuthState;
+      notifications: NotificationsState;
+      active_course: ActiveCourse | null;
+      websocket: WebSocketState;
+    }
+
+
+    // API
+
+    const API_BASE_URL = 'http://localhost:1337/api';
+
+    const api = axios.create({
+      baseURL: API_BASE_URL,
+    });
+
+
+    // WebSocket
+
+    let socket: Socket | null = null;
+
+
+    // Slices
+
+    const authSlice = createSlice({
+      name: 'auth',
+      initialState: {
+        user: null,
+        token: null,
+        is_authenticated: false,
+      } as AuthState,
+      reducers: {
+        set_auth: (state, action: PayloadAction<AuthState>) => {
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+          state.is_authenticated = action.payload.is_authenticated;
+        },
+        clear_auth: (state) => {
+          state.user = null;
+          state.token = null;
+          state.is_authenticated = false;
+        },
+      },
+    });
+
+
+    const notificationsSlice = createSlice({
+      name: 'notifications',
+      initialState: {
+        items: [],
+        unread_count: 0,
+      } as NotificationsState,
+      reducers: {
+        set_notifications: (state, action: PayloadAction<Notification[]>) => {
+          state.items = action.payload;
+          state.unread_count = action.payload.filter((n) => !n.is_read).length;
+        },
+        add_notification: (state, action: PayloadAction<Notification>) => {
+          state.items.unshift(action.payload);
+          if (!action.payload.is_read) {
+            state.unread_count += 1;
+          }
+        },
+        mark_notification_as_read: (state, action: PayloadAction<string>) => {
+          const notification = state.items.find((n) => n.uid === action.payload);
+          if (notification && !notification.is_read) {
+            notification.is_read = true;
+            state.unread_count -= 1;
+          }
+        },
+      },
+    });
+
+
+    const activeCourseSlice = createSlice({
+      name: 'active_course',
+      initialState: null as ActiveCourse | null,
+      reducers: {
+        set_active_course: (state, action: PayloadAction<ActiveCourse | null>) => action.payload,
+      },
+    });
+
+
+    const websocketSlice = createSlice({
+      name: 'websocket',
+      initialState: {
+        is_connected: false,
+      } as WebSocketState,
+      reducers: {
+        set_websocket_connected: (state, action: PayloadAction<boolean>) => {
+          state.is_connected = action.payload;
+        },
+      },
+    });
+
+
+    // Thunks
+
+    export const loginThunk = createAsyncThunk(
+      'auth/login',
+      async (credentials: { email: string; password: string }, { dispatch }) => {
+        try {
+          const response = await api.post('/auth/login', credentials);
+          const { token, user } = response.data;
+          dispatch(authSlice.actions.set_auth({ user, token, is_authenticated: true }));
+          return { user, token };
+        } catch (error) {
+          throw new Error('Login failed');
+        }
+      }
+    );
+
+
+    export const logoutThunk = createAsyncThunk(
+      'auth/logout',
+      async (_, { dispatch }) => {
+        try {
+          await api.post('/auth/logout');
+          dispatch(authSlice.actions.clear_auth());
+        } catch (error) {
+          console.error('Logout failed', error);
+        }
+      }
+    );
+
+
+    export const fetchNotificationsThunk = createAsyncThunk(
+      'notifications/fetchNotifications',
+      async (_, { dispatch, getState }) => {
+        try {
+          const state = getState() as RootState;
+          const response = await api.get('/notifications', {
+            headers: { Authorization: `Bearer ${state.auth.token}` },
+          });
+          dispatch(notificationsSlice.actions.set_notifications(response.data));
+        } catch (error) {
+          console.error('Failed to fetch notifications', error);
+        }
+      }
+    );
+
+
+    export const markNotificationAsReadThunk = createAsyncThunk(
+      'notifications/markAsRead',
+      async (notification_uid: string, { dispatch, getState }) => {
+        try {
+          const state = getState() as RootState;
+          await api.put(`/notifications/${notification_uid}/read`, null, {
+            headers: { Authorization: `Bearer ${state.auth.token}` },
+          });
+          dispatch(notificationsSlice.actions.mark_notification_as_read(notification_uid));
+        } catch (error) {
+          console.error('Failed to mark notification as read', error);
+        }
+      }
+    );
+
+
+    export const connectWebSocketThunk = createAsyncThunk(
+      'websocket/connect',
+      async (_, { dispatch, getState }) => {
+        const state = getState() as RootState;
+        if (state.auth.token) {
+          socket = io('http://localhost:1337', {
+            query: { token: state.auth.token },
+          });
+
+          socket.on('connect', () => {
+            dispatch(websocketSlice.actions.set_websocket_connected(true));
+          });
+
+          socket.on('disconnect', () => {
+            dispatch(websocketSlice.actions.set_websocket_connected(false));
+          });
+
+          socket.on('new_notification', (notification: Notification) => {
+            dispatch(notificationsSlice.actions.add_notification(notification));
+          });
+
+          socket.on('progress_update', (data: any) => {
+            // Handle progress update
+            console.log('Progress update received', data);
+          });
+        }
+      }
+    );
+
+
+    // Persist Configuration
+
+    const authPersistConfig = {
+      key: 'auth',
+      storage,
+      whitelist: ['user', 'token', 'is_authenticated'],
+    };
+
+
+    // Root Reducer
+
+    const rootReducer = {
+      auth: persistReducer(authPersistConfig, authSlice.reducer),
+      notifications: notificationsSlice.reducer,
+      active_course: activeCourseSlice.reducer,
+      websocket: websocketSlice.reducer,
+    };
+
+
+    // Store
+
+    const store = configureStore({
+      reducer: rootReducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          serializableCheck: {
+            ignoredActions: ['persist/PERSIST'],
+          },
+        }),
+    });
+
+
+    export const persistor = persistStore(store);
+
+
+    // Exports
+
+    export const { set_auth, clear_auth } = authSlice.actions;
+
+    export const { set_notifications, add_notification,
+    mark_notification_as_read } = notificationsSlice.actions;
+
+    export const { set_active_course } = activeCourseSlice.actions;
+
+    export const { set_websocket_connected } = websocketSlice.actions;
+
+
+    export type AppDispatch = typeof store.dispatch;
+
+    export type AppState = ReturnType<typeof store.getState>;
+
+
+    export default store;
+  dependencies:
+    "@reduxjs/toolkit": "*"
+    react-redux: "*"
+    redux-persist: "*"
+    socket.io-client: "*"
+    axios: "*"
+  timestamp: "1731089609972"

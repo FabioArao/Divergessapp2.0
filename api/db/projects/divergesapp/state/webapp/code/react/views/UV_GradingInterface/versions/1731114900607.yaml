@@ -1,0 +1,356 @@
+_updated: 1731151171065
+_processing: false
+key: webapp.react.views.UV_GradingInterface.1731114900607
+data:
+  analysis: >-
+    Analysis for UV_GradingInterface:
+
+
+    1. Component Structure:
+       - The component will be a functional React component (React.FC) named UV_GradingInterface.
+       - It will use hooks for state management and side effects.
+
+    2. State Management:
+       - Local state will be used for assignmentDetails, submissionData, gradingData, and annotationData.
+       - The global auth state will be accessed to ensure the user has grading permissions.
+       - The global activeCourse state will be used to display the course context.
+
+    3. Data Fetching:
+       - The component will fetch assignment and submission details on mount using the assignment_uid and submission_uid from the URL params.
+       - An API call will be implemented to fetch this data from the backend.
+
+    4. User Interface:
+       - The interface will be split into two main sections: student submission view and grading tools.
+       - For document submissions, a PDF viewer with annotation capabilities will be implemented.
+       - A rubric section will be included if the assignment has a rubric.
+       - Score input, feedback textarea, and action buttons (Save, Publish Grade, Request Revision) will be provided.
+
+    5. Interactions:
+       - Score updates will trigger real-time calculation of the final grade.
+       - Feedback changes will be stored in local state.
+       - Annotations on submitted files will be managed in local state.
+       - Save, Publish Grade, and Request Revision actions will make API calls to the backend.
+
+    6. Error Handling:
+       - Error states will be managed for API calls and invalid data.
+       - Appropriate error messages will be displayed to the user.
+
+    7. Accessibility:
+       - Proper ARIA labels and roles will be used for accessibility.
+       - Keyboard navigation will be implemented for all interactive elements.
+
+    8. Performance Considerations:
+       - Large file rendering (e.g., PDFs) will be optimized to prevent performance issues.
+       - Debouncing will be applied to frequent updates (e.g., score changes) to reduce unnecessary re-renders.
+
+    9. Security:
+       - The component will check if the current user has permission to grade the assignment.
+       - All API calls will include authentication tokens.
+
+    This implementation will create a comprehensive grading interface that
+    allows teachers to efficiently review and grade student submissions while
+    providing structured feedback.
+  tsx: >-
+    import React, { useState, useEffect, useCallback } from 'react';
+
+    import { useParams, useNavigate } from 'react-router-dom';
+
+    import { useSelector, useDispatch } from 'react-redux';
+
+    import { AppState, AppDispatch } from '@/store/main';
+
+    import axios from 'axios';
+
+    import { Document, Page } from 'react-pdf';
+
+    import { debounce } from 'lodash';
+
+
+    const UV_GradingInterface: React.FC = () => {
+      const { assignment_uid, submission_uid } = useParams<{ assignment_uid: string; submission_uid: string }>();
+      const navigate = useNavigate();
+      const dispatch = useDispatch<AppDispatch>();
+      const { user, token } = useSelector((state: AppState) => state.auth);
+      const activeCourse = useSelector((state: AppState) => state.active_course);
+
+      const [assignmentDetails, setAssignmentDetails] = useState<any>(null);
+      const [submissionData, setSubmissionData] = useState<any>(null);
+      const [gradingData, setGradingData] = useState<{
+        score: number;
+        feedback: string;
+        rubric_scores: Array<{ criterion_id: string; score: number }>;
+      }>({
+        score: 0,
+        feedback: "",
+        rubric_scores: [],
+      });
+      const [annotationData, setAnnotationData] = useState<Array<{ file_url: string; annotations: Array<{ x: number; y: number; text: string }> }>>([]);
+      const [error, setError] = useState<string | null>(null);
+      const [isLoading, setIsLoading] = useState(true);
+      const [numPages, setNumPages] = useState<number | null>(null);
+      const [pageNumber, setPageNumber] = useState(1);
+
+      const fetchAssignmentAndSubmission = useCallback(async () => {
+        if (!token || user?.user_type !== 'teacher') {
+          setError("You don't have permission to access this page.");
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const [assignmentResponse, submissionResponse] = await Promise.all([
+            axios.get(`http://localhost:1337/assignments/${assignment_uid}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            axios.get(`http://localhost:1337/assignments/${assignment_uid}/submissions/${submission_uid}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+
+          setAssignmentDetails(assignmentResponse.data);
+          setSubmissionData(submissionResponse.data);
+          setGradingData(prevState => ({
+            ...prevState,
+            rubric_scores: assignmentResponse.data.rubric.map((criterion: any) => ({
+              criterion_id: criterion.uid,
+              score: 0,
+            })),
+          }));
+        } catch (err) {
+          setError("Failed to fetch assignment and submission data.");
+        } finally {
+          setIsLoading(false);
+        }
+      }, [assignment_uid, submission_uid, token, user]);
+
+      useEffect(() => {
+        fetchAssignmentAndSubmission();
+      }, [fetchAssignmentAndSubmission]);
+
+      const handleScoreChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newScore = parseFloat(event.target.value);
+        setGradingData(prevState => ({ ...prevState, score: newScore }));
+      };
+
+      const handleFeedbackChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setGradingData(prevState => ({ ...prevState, feedback: event.target.value }));
+      };
+
+      const handleRubricScoreChange = (criterion_id: string, score: number) => {
+        setGradingData(prevState => ({
+          ...prevState,
+          rubric_scores: prevState.rubric_scores.map(item =>
+            item.criterion_id === criterion_id ? { ...item, score } : item
+          ),
+        }));
+      };
+
+      const handleAnnotation = (file_url: string, annotation: { x: number; y: number; text: string }) => {
+        setAnnotationData(prevState => {
+          const fileIndex = prevState.findIndex(item => item.file_url === file_url);
+          if (fileIndex === -1) {
+            return [...prevState, { file_url, annotations: [annotation] }];
+          } else {
+            const newState = [...prevState];
+            newState[fileIndex].annotations.push(annotation);
+            return newState;
+          }
+        });
+      };
+
+      const saveGrade = async () => {
+        try {
+          await axios.post(`http://localhost:1337/assignments/${assignment_uid}/grade`, {
+            submission_uid,
+            ...gradingData,
+            annotations: annotationData,
+          }, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          alert("Grade saved successfully!");
+        } catch (err) {
+          setError("Failed to save grade.");
+        }
+      };
+
+      const publishGrade = async () => {
+        try {
+          await axios.post(`http://localhost:1337/assignments/${assignment_uid}/publish-grade`, {
+            submission_uid,
+            ...gradingData,
+            annotations: annotationData,
+          }, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          alert("Grade published successfully!");
+          navigate(`/courses/${activeCourse?.uid}`);
+        } catch (err) {
+          setError("Failed to publish grade.");
+        }
+      };
+
+      const requestRevision = async () => {
+        try {
+          await axios.post(`http://localhost:1337/assignments/${assignment_uid}/request-revision`, {
+            submission_uid,
+            feedback: gradingData.feedback,
+          }, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          alert("Revision requested successfully!");
+          navigate(`/courses/${activeCourse?.uid}`);
+        } catch (err) {
+          setError("Failed to request revision.");
+        }
+      };
+
+      const debouncedSaveGrade = debounce(saveGrade, 1000);
+
+      useEffect(() => {
+        debouncedSaveGrade();
+        return () => {
+          debouncedSaveGrade.cancel();
+        };
+      }, [gradingData, annotationData]);
+
+      if (isLoading) {
+        return <div className="flex justify-center items-center h-screen">Loading...</div>;
+      }
+
+      if (error) {
+        return <div className="text-red-500 text-center">{error}</div>;
+      }
+
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold mb-6">{assignmentDetails?.title} - Grading Interface</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4">Student Submission</h2>
+              <p><strong>Student:</strong> {submissionData?.student_name}</p>
+              <p><strong>Submitted at:</strong> {new Date(submissionData?.submitted_at).toLocaleString()}</p>
+              {submissionData?.text && (
+                <div className="mt-4">
+                  <h3 className="text-xl font-semibold mb-2">Submission Text</h3>
+                  <p className="whitespace-pre-wrap">{submissionData.text}</p>
+                </div>
+              )}
+              {submissionData?.file_urls && submissionData.file_urls.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-xl font-semibold mb-2">Submitted Files</h3>
+                  {submissionData.file_urls.map((file_url: string, index: number) => (
+                    <div key={index} className="mb-4">
+                      {file_url.endsWith('.pdf') ? (
+                        <Document
+                          file={file_url}
+                          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                        >
+                          <Page
+                            pageNumber={pageNumber}
+                            renderAnnotationLayer={false}
+                            renderTextLayer={false}
+                          />
+                        </Document>
+                      ) : (
+                        <img src={file_url} alt={`Submitted file ${index + 1}`} className="max-w-full h-auto" />
+                      )}
+                    </div>
+                  ))}
+                  {numPages && (
+                    <div className="flex justify-between items-center mt-2">
+                      <button
+                        onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
+                        disabled={pageNumber <= 1}
+                        className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                      >
+                        Previous
+                      </button>
+                      <span>Page {pageNumber} of {numPages}</span>
+                      <button
+                        onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))}
+                        disabled={pageNumber >= numPages}
+                        className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4">Grading</h2>
+              <div className="mb-4">
+                <label htmlFor="score" className="block text-sm font-medium text-gray-700">Score</label>
+                <input
+                  type="number"
+                  id="score"
+                  value={gradingData.score}
+                  onChange={handleScoreChange}
+                  min="0"
+                  max={assignmentDetails?.max_score}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                />
+              </div>
+              {assignmentDetails?.rubric && assignmentDetails.rubric.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-xl font-semibold mb-2">Rubric</h3>
+                  {assignmentDetails.rubric.map((criterion: any) => (
+                    <div key={criterion.uid} className="mb-2">
+                      <label htmlFor={`rubric-${criterion.uid}`} className="block text-sm font-medium text-gray-700">{criterion.criterion}</label>
+                      <input
+                        type="number"
+                        id={`rubric-${criterion.uid}`}
+                        value={gradingData.rubric_scores.find(item => item.criterion_id === criterion.uid)?.score || 0}
+                        onChange={(e) => handleRubricScoreChange(criterion.uid, parseFloat(e.target.value))}
+                        min="0"
+                        max={criterion.max_score}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mb-4">
+                <label htmlFor="feedback" className="block text-sm font-medium text-gray-700">Feedback</label>
+                <textarea
+                  id="feedback"
+                  value={gradingData.feedback}
+                  onChange={handleFeedbackChange}
+                  rows={5}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                ></textarea>
+              </div>
+              <div className="flex justify-between">
+                <button
+                  onClick={saveGrade}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={publishGrade}
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  Publish Grade
+                </button>
+                <button
+                  onClick={requestRevision}
+                  className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  Request Revision
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+
+    export default UV_GradingInterface;
+  dependencies:
+    react-pdf: "*"
+    lodash: "*"
+    axios: "*"
+  timestamp: "1731114900607"

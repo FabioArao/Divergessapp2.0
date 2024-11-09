@@ -1,0 +1,402 @@
+_updated: 1731150938762
+_processing: false
+key: webapp.react.views.UV_CourseCreation.latest
+data:
+  analysis: >-
+    Analysis of UV_CourseCreation Component:
+
+
+    1. Component Purpose:
+       The UV_CourseCreation component is designed for teachers to create new courses in the DivergesiApp educational platform. It provides a comprehensive form for inputting course details, including name, description, grade level, subject, dates, visibility, and enrollment settings.
+
+    2. State Management:
+       - Local state will be used to manage the form inputs (courseForm), form errors (formErrors), submission status (isSubmitting), and preview mode (previewMode).
+       - The global auth state will be accessed to ensure the user has teacher privileges.
+
+    3. Form Validation:
+       - A validateForm function will be implemented to check all form fields for validity before submission or preview.
+       - Error messages will be displayed for invalid fields.
+
+    4. Image Upload:
+       - The component will allow teachers to upload a course image using a file input.
+       - The uploaded image will be previewed before submission.
+
+    5. Preview Mode:
+       - A toggle will switch between edit and preview modes, allowing teachers to see how the course will appear to students.
+
+    6. API Interaction:
+       - On form submission, a POST request will be sent to /api/courses with the course data.
+       - If an image is uploaded, it will be included in the request as a file.
+
+    7. Draft Saving:
+       - A "Save Draft" feature will be implemented, sending a POST request to /api/courses/drafts.
+
+    8. User Experience:
+       - The form will be responsive and user-friendly, with clear labels and instructions.
+       - Loading indicators will be shown during form submission.
+       - Success and error messages will be displayed after API responses.
+
+    9. Accessibility:
+       - Proper ARIA labels and semantic HTML will be used to ensure accessibility.
+
+    10. Navigation:
+        - After successful course creation, the user will be redirected to the course overview page.
+
+    This component plays a crucial role in the platform by enabling teachers to
+    set up new courses efficiently and effectively.
+  tsx: >-
+    import React, { useState } from 'react';
+
+    import { useNavigate } from 'react-router-dom';
+
+    import { useSelector } from 'react-redux';
+
+    import { AppState } from '@/store/main';
+
+    import axios from 'axios';
+
+
+    const UV_CourseCreation: React.FC = () => {
+      const navigate = useNavigate();
+      const { user } = useSelector((state: AppState) => state.auth);
+
+      const [courseForm, setCourseForm] = useState({
+        name: '',
+        description: '',
+        gradeLevel: '',
+        subject: '',
+        startDate: '',
+        endDate: '',
+        visibility: 'public',
+        enrollmentType: 'open',
+        imageFile: null as File | null,
+      });
+
+      const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [previewMode, setPreviewMode] = useState(false);
+      const [submitMessage, setSubmitMessage] = useState('');
+
+      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setCourseForm(prev => ({ ...prev, [name]: value }));
+      };
+
+      const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          setCourseForm(prev => ({ ...prev, imageFile: file }));
+        }
+      };
+
+      const validateForm = (): boolean => {
+        const errors: Record<string, string> = {};
+        if (!courseForm.name.trim()) errors.name = 'Course name is required';
+        if (!courseForm.description.trim()) errors.description = 'Description is required';
+        if (!courseForm.gradeLevel) errors.gradeLevel = 'Grade level is required';
+        if (!courseForm.subject.trim()) errors.subject = 'Subject is required';
+        if (!courseForm.startDate) errors.startDate = 'Start date is required';
+        if (!courseForm.endDate) errors.endDate = 'End date is required';
+        if (new Date(courseForm.startDate) > new Date(courseForm.endDate)) {
+          errors.endDate = 'End date must be after start date';
+        }
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+      };
+
+      const togglePreviewMode = () => {
+        if (!previewMode && !validateForm()) return;
+        setPreviewMode(!previewMode);
+      };
+
+      const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!validateForm()) return;
+        setIsSubmitting(true);
+        setSubmitMessage('');
+
+        try {
+          const formData = new FormData();
+          Object.entries(courseForm).forEach(([key, value]) => {
+            if (key !== 'imageFile') {
+              formData.append(key, value.toString());
+            }
+          });
+          if (courseForm.imageFile) {
+            formData.append('image', courseForm.imageFile);
+          }
+
+          const response = await axios.post('http://localhost:1337/api/courses', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          });
+
+          setSubmitMessage('Course created successfully!');
+          navigate(`/courses/${response.data.uid}`);
+        } catch (error) {
+          setSubmitMessage('Failed to create course. Please try again.');
+          console.error('Error creating course:', error);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      const saveDraft = async () => {
+        setIsSubmitting(true);
+        setSubmitMessage('');
+
+        try {
+          const response = await axios.post('http://localhost:1337/api/courses/drafts', courseForm, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          });
+
+          setSubmitMessage('Draft saved successfully!');
+        } catch (error) {
+          setSubmitMessage('Failed to save draft. Please try again.');
+          console.error('Error saving draft:', error);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      if (user?.user_type !== 'teacher') {
+        return <div className="text-center mt-8">You do not have permission to create courses.</div>;
+      }
+
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold mb-6">Create New Course</h1>
+          
+          <div className="mb-4">
+            <button
+              onClick={togglePreviewMode}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              {previewMode ? 'Edit Mode' : 'Preview Mode'}
+            </button>
+          </div>
+
+          {previewMode ? (
+            <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+              <h2 className="text-2xl font-bold mb-4">{courseForm.name}</h2>
+              <p className="mb-4">{courseForm.description}</p>
+              <p><strong>Grade Level:</strong> {courseForm.gradeLevel}</p>
+              <p><strong>Subject:</strong> {courseForm.subject}</p>
+              <p><strong>Start Date:</strong> {courseForm.startDate}</p>
+              <p><strong>End Date:</strong> {courseForm.endDate}</p>
+              <p><strong>Visibility:</strong> {courseForm.visibility}</p>
+              <p><strong>Enrollment:</strong> {courseForm.enrollmentType}</p>
+              {courseForm.imageFile && (
+                <img
+                  src={URL.createObjectURL(courseForm.imageFile)}
+                  alt="Course preview"
+                  className="mt-4 max-w-xs"
+                />
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                  Course Name
+                </label>
+                <input
+                  className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                    formErrors.name ? 'border-red-500' : ''
+                  }`}
+                  id="name"
+                  type="text"
+                  name="name"
+                  value={courseForm.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter course name"
+                />
+                {formErrors.name && <p className="text-red-500 text-xs italic">{formErrors.name}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+                  Description
+                </label>
+                <textarea
+                  className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                    formErrors.description ? 'border-red-500' : ''
+                  }`}
+                  id="description"
+                  name="description"
+                  value={courseForm.description}
+                  onChange={handleInputChange}
+                  placeholder="Enter course description"
+                  rows={4}
+                />
+                {formErrors.description && <p className="text-red-500 text-xs italic">{formErrors.description}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gradeLevel">
+                  Grade Level
+                </label>
+                <input
+                  className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                    formErrors.gradeLevel ? 'border-red-500' : ''
+                  }`}
+                  id="gradeLevel"
+                  type="number"
+                  name="gradeLevel"
+                  value={courseForm.gradeLevel}
+                  onChange={handleInputChange}
+                  placeholder="Enter grade level"
+                />
+                {formErrors.gradeLevel && <p className="text-red-500 text-xs italic">{formErrors.gradeLevel}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="subject">
+                  Subject
+                </label>
+                <input
+                  className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                    formErrors.subject ? 'border-red-500' : ''
+                  }`}
+                  id="subject"
+                  type="text"
+                  name="subject"
+                  value={courseForm.subject}
+                  onChange={handleInputChange}
+                  placeholder="Enter subject"
+                />
+                {formErrors.subject && <p className="text-red-500 text-xs italic">{formErrors.subject}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="startDate">
+                  Start Date
+                </label>
+                <input
+                  className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                    formErrors.startDate ? 'border-red-500' : ''
+                  }`}
+                  id="startDate"
+                  type="date"
+                  name="startDate"
+                  value={courseForm.startDate}
+                  onChange={handleInputChange}
+                />
+                {formErrors.startDate && <p className="text-red-500 text-xs italic">{formErrors.startDate}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="endDate">
+                  End Date
+                </label>
+                <input
+                  className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                    formErrors.endDate ? 'border-red-500' : ''
+                  }`}
+                  id="endDate"
+                  type="date"
+                  name="endDate"
+                  value={courseForm.endDate}
+                  onChange={handleInputChange}
+                />
+                {formErrors.endDate && <p className="text-red-500 text-xs italic">{formErrors.endDate}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="visibility">
+                  Visibility
+                </label>
+                <select
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="visibility"
+                  name="visibility"
+                  value={courseForm.visibility}
+                  onChange={handleInputChange}
+                >
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="enrollmentType">
+                  Enrollment Type
+                </label>
+                <select
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="enrollmentType"
+                  name="enrollmentType"
+                  value={courseForm.enrollmentType}
+                  onChange={handleInputChange}
+                >
+                  <option value="open">Open</option>
+                  <option value="invitation">Invitation Only</option>
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="imageUpload">
+                  Course Image
+                </label>
+                <input
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="imageUpload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+              </div>
+
+              {courseForm.imageFile && (
+                <div className="mb-4">
+                  <img
+                    src={URL.createObjectURL(courseForm.imageFile)}
+                    alt="Course preview"
+                    className="mt-2 max-w-xs"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <button
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Course'}
+                </button>
+                <button
+                  className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  type="button"
+                  onClick={saveDraft}
+                  disabled={isSubmitting}
+                >
+                  Save Draft
+                </button>
+              </div>
+            </form>
+          )}
+
+          {submitMessage && (
+            <div className={`mt-4 p-4 rounded ${submitMessage.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {submitMessage}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+
+    export default UV_CourseCreation;
+  dependencies:
+    react: "*"
+    react-dom: "*"
+    react-router-dom: "*"
+    react-redux: "*"
+    "@reduxjs/toolkit": "*"
+    axios: "*"
+  timestamp: "1731114899720"

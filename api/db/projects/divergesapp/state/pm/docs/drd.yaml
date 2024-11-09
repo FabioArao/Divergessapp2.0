@@ -1,0 +1,426 @@
+_updated: 1731084447491
+_processing: false
+key: pm.drd
+data: >-
+  # Database Requirements Document (DRD) for DivergesiApp
+
+
+  ## 1. Introduction
+
+
+  This document outlines the comprehensive database requirements for
+  DivergesiApp, an interactive educational platform designed to facilitate
+  seamless communication and collaboration between teachers, students, and
+  guardians. The database design aims to support all core functionalities of the
+  application while ensuring scalability, performance, and data integrity.
+
+
+  ## 2. Entity Relationship Diagram (ERD)
+
+
+  [Note: An actual ERD would be included here. For the purposes of this
+  text-based document, we'll describe the main entities and their
+  relationships.]
+
+
+  ## 3. Database Schemas
+
+
+  ### 3.1 Users
+
+
+  ```sql
+
+  CREATE TABLE users (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      full_name VARCHAR(255) NOT NULL,
+      user_type ENUM('teacher', 'student', 'guardian') NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  );
+
+  ```
+
+
+  Justification: This table stores essential user information for all types of
+  users. The `user_type` field allows for role-based access control. Email is
+  set as unique to prevent duplicate accounts.
+
+
+  ### 3.2 User Profiles
+
+
+  ```sql
+
+  CREATE TABLE user_profiles (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      profile_picture VARCHAR(255),
+      bio TEXT,
+      grade_level INT,
+      subjects_taught JSON,
+      contact_information JSON,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  ```
+
+
+  Justification: This table extends the users table with additional profile
+  information. Using JSON fields for `subjects_taught` and `contact_information`
+  allows for flexibility in storing varied data for different user types.
+
+
+  ### 3.3 Courses
+
+
+  ```sql
+
+  CREATE TABLE courses (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      teacher_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      grade_level INT,
+      subject VARCHAR(100),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (teacher_id) REFERENCES users(id)
+  );
+
+  ```
+
+
+  Justification: This table stores course information, linking each course to a
+  teacher. It includes essential details like name, description, grade level,
+  and subject.
+
+
+  ### 3.4 Course Enrollments
+
+
+  ```sql
+
+  CREATE TABLE course_enrollments (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      course_id INT NOT NULL,
+      student_id INT NOT NULL,
+      enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      status ENUM('active', 'completed', 'dropped') DEFAULT 'active',
+      FOREIGN KEY (course_id) REFERENCES courses(id),
+      FOREIGN KEY (student_id) REFERENCES users(id),
+      UNIQUE KEY (course_id, student_id)
+  );
+
+  ```
+
+
+  Justification: This table manages the many-to-many relationship between
+  students and courses. The `status` field allows tracking of enrollment status.
+
+
+  ### 3.5 Modules
+
+
+  ```sql
+
+  CREATE TABLE modules (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      course_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      order_index INT NOT NULL,
+      prerequisites JSON,
+      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+  );
+
+  ```
+
+
+  Justification: Modules organize course content. The `order_index` allows for
+  custom ordering, and `prerequisites` (stored as JSON) enables complex
+  prerequisite structures.
+
+
+  ### 3.6 Content Items
+
+
+  ```sql
+
+  CREATE TABLE content_items (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      module_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      content_type ENUM('video', 'pdf', 'image', 'text', 'presentation', 'audio') NOT NULL,
+      file_path VARCHAR(255),
+      order_index INT NOT NULL,
+      is_mandatory BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+  );
+
+  ```
+
+
+  Justification: This table stores various types of content items. The
+  `content_type` field allows for different rendering methods, while
+  `is_mandatory` supports the learning path feature.
+
+
+  ### 3.7 Student Progress
+
+
+  ```sql
+
+  CREATE TABLE student_progress (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      student_id INT NOT NULL,
+      content_item_id INT NOT NULL,
+      status ENUM('not_started', 'in_progress', 'completed') DEFAULT 'not_started',
+      completion_date TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES users(id),
+      FOREIGN KEY (content_item_id) REFERENCES content_items(id),
+      UNIQUE KEY (student_id, content_item_id)
+  );
+
+  ```
+
+
+  Justification: This table tracks individual student progress through content
+  items, essential for the learning path and progress tracking features.
+
+
+  ### 3.8 Assignments
+
+
+  ```sql
+
+  CREATE TABLE assignments (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      course_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      due_date TIMESTAMP,
+      max_score FLOAT,
+      submission_type ENUM('file', 'text', 'both') NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+  );
+
+  ```
+
+
+  Justification: This table stores assignment details. The `submission_type`
+  field allows for different submission methods.
+
+
+  ### 3.9 Submissions
+
+
+  ```sql
+
+  CREATE TABLE submissions (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      assignment_id INT NOT NULL,
+      student_id INT NOT NULL,
+      submission_text TEXT,
+      file_path VARCHAR(255),
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (assignment_id) REFERENCES assignments(id),
+      FOREIGN KEY (student_id) REFERENCES users(id),
+      UNIQUE KEY (assignment_id, student_id)
+  );
+
+  ```
+
+
+  Justification: This table stores student submissions for assignments, allowing
+  for both text and file submissions.
+
+
+  ### 3.10 Grades
+
+
+  ```sql
+
+  CREATE TABLE grades (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      submission_id INT NOT NULL,
+      graded_by INT NOT NULL,
+      score FLOAT,
+      feedback TEXT,
+      graded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (submission_id) REFERENCES submissions(id),
+      FOREIGN KEY (graded_by) REFERENCES users(id)
+  );
+
+  ```
+
+
+  Justification: This table stores grades and feedback for submissions, linked
+  to both the submission and the teacher who graded it.
+
+
+  ### 3.11 Messages
+
+
+  ```sql
+
+  CREATE TABLE messages (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      sender_id INT NOT NULL,
+      recipient_id INT NOT NULL,
+      subject VARCHAR(255),
+      body TEXT,
+      sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      read_at TIMESTAMP,
+      FOREIGN KEY (sender_id) REFERENCES users(id),
+      FOREIGN KEY (recipient_id) REFERENCES users(id)
+  );
+
+  ```
+
+
+  Justification: This table supports the messaging system, allowing
+  communication between all user types.
+
+
+  ### 3.12 Announcements
+
+
+  ```sql
+
+  CREATE TABLE announcements (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      course_id INT NOT NULL,
+      teacher_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      content TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (course_id) REFERENCES courses(id),
+      FOREIGN KEY (teacher_id) REFERENCES users(id)
+  );
+
+  ```
+
+
+  Justification: This table stores course-wide announcements, linked to both the
+  course and the teacher who created them.
+
+
+  ### 3.13 Comments
+
+
+  ```sql
+
+  CREATE TABLE comments (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      target_type ENUM('submission', 'student_performance') NOT NULL,
+      target_id INT NOT NULL,
+      content TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  ```
+
+
+  Justification: This flexible comment system allows teachers to comment on both
+  submissions and overall student performance. The `target_type` and `target_id`
+  fields allow linking comments to various entities.
+
+
+  ### 3.14 Guardian Associations
+
+
+  ```sql
+
+  CREATE TABLE guardian_associations (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      guardian_id INT NOT NULL,
+      student_id INT NOT NULL,
+      relationship VARCHAR(50),
+      FOREIGN KEY (guardian_id) REFERENCES users(id),
+      FOREIGN KEY (student_id) REFERENCES users(id),
+      UNIQUE KEY (guardian_id, student_id)
+  );
+
+  ```
+
+
+  Justification: This table manages the relationships between guardians and
+  students, allowing guardians to be associated with multiple students if
+  necessary.
+
+
+  ## 4. Indexes
+
+
+  To optimize query performance, consider adding the following indexes:
+
+
+  1. Index on `users(email)` for faster login queries.
+
+  2. Index on `course_enrollments(student_id)` for quick retrieval of a
+  student's courses.
+
+  3. Index on `student_progress(student_id, content_item_id)` for efficient
+  progress tracking.
+
+  4. Index on `submissions(assignment_id, student_id)` for faster assignment
+  grading queries.
+
+  5. Index on `messages(recipient_id, read_at)` for efficient retrieval of
+  unread messages.
+
+
+  ## 5. Data Integrity Constraints
+
+
+  1. Implement foreign key constraints as shown in the schema definitions to
+  maintain referential integrity.
+
+  2. Use `ON DELETE CASCADE` for child records that should be deleted when a
+  parent record is deleted (e.g., content items when a module is deleted).
+
+  3. Use `UNIQUE` constraints to prevent duplicate entries where appropriate
+  (e.g., course enrollments).
+
+
+  ## 6. Security Considerations
+
+
+  1. Encrypt sensitive data at rest, particularly for the `users` table (e.g.,
+  email addresses).
+
+  2. Implement row-level security in the application layer to ensure users can
+  only access data they're authorized to view.
+
+  3. Use prepared statements for all database queries to prevent SQL injection
+  attacks.
+
+
+  ## 7. Scalability Considerations
+
+
+  1. Consider implementing database sharding for large tables like `messages` or
+  `student_progress` if the application scales to a very large number of users.
+
+  2. Implement caching mechanisms for frequently accessed data, such as course
+  information and user profiles.
+
+  3. Archive old data (e.g., completed courses, old messages) to maintain
+  performance as the database grows.
+
+
+  This comprehensive database design covers all the core functionalities of
+  DivergesiApp, including user management, course management, content
+  organization, assignment handling, grading, messaging, and progress tracking.
+  It provides a solid foundation for building a scalable and efficient
+  educational platform.

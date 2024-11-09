@@ -1,0 +1,393 @@
+_updated: 1731084400364
+_processing: false
+key: pm.frd
+data: >-
+  # Features Requirements Document (FRD) for DivergesiApp
+
+
+  ## 1. Introduction
+
+
+  DivergesiApp is an interactive educational platform designed to facilitate
+  seamless communication and collaboration between teachers, students, and
+  guardians. This FRD outlines the user-facing features and core functionality
+  required for the Minimum Viable Product (MVP) of DivergesiApp.
+
+
+  ## 2. User Roles and Access
+
+
+  ### 2.1 Teacher Features
+
+  - Account creation and profile management
+
+  - Course creation and management
+
+  - Content upload and organization
+
+  - Learning path creation
+
+  - Assignment creation and grading
+
+  - Student progress tracking
+
+  - Communication with students and guardians
+
+
+  ### 2.2 Student Features
+
+  - Account creation and profile management
+
+  - Course enrollment and access
+
+  - Content viewing and consumption
+
+  - Assignment submission
+
+  - Grade and feedback viewing
+
+  - Progress tracking
+
+  - Communication with teachers
+
+
+  ### 2.3 Guardian Features
+
+  - Account creation and profile management
+
+  - View child's progress, grades, and teacher notes
+
+  - Communication with teachers
+
+
+  ## 3. Core Features
+
+
+  ### 3.1 User Management
+
+
+  #### 3.1.1 User Registration
+
+  - Implement a registration form with fields for:
+    - Full name
+    - Email address
+    - Password
+    - User type (Teacher, Student, Guardian)
+  - For students and guardians, include additional fields:
+    - Grade level
+    - Associated teacher(s) or student(s)
+
+  #### 3.1.2 User Authentication
+
+  - Provide a secure login page
+
+  - Implement "Forgot Password" functionality
+
+  - Enable password reset via email
+
+
+  #### 3.1.3 User Profiles
+
+  - Allow users to view and edit their profiles
+
+  - Display relevant information based on user type:
+    - Teachers: Qualifications, subjects taught, contact information
+    - Students: Grade level, enrolled courses, guardian information
+    - Guardians: Associated student(s), contact information
+
+  ### 3.2 Course Management
+
+
+  #### 3.2.1 Course Creation (Teachers)
+
+  - Provide a form to create new courses with fields for:
+    - Course name
+    - Description
+    - Grade level
+    - Subject
+
+  #### 3.2.2 Course Enrollment
+
+  - Allow teachers to manually enroll students
+
+  - Implement a course catalog for students to browse and request enrollment
+
+
+  #### 3.2.3 Course Dashboard
+
+  - Display course information, recent activities, and upcoming assignments
+
+  - Provide quick access to course content and features
+
+
+  ### 3.3 Content Upload and Management
+
+
+  #### 3.3.1 Content Upload (Teachers)
+
+  - Implement a drag-and-drop interface for file uploads
+
+  - Support multiple file types:
+    - Video (mp4, mov, avi)
+    - PDF documents
+    - Images (jpg, png, gif)
+    - Text documents (doc, docx, txt)
+    - Presentations (ppt, pptx)
+    - Audio (mp3, wav)
+  - Set a maximum file size limit (e.g., 100MB per file)
+
+
+  #### 3.3.2 Content Organization (Teachers)
+
+  - Allow creation of folders or modules within courses
+
+  - Implement a drag-and-drop interface for organizing content
+
+  - Enable setting the order of content items
+
+
+  #### 3.3.3 Content Viewing (Students)
+
+  - Provide a built-in viewer for different file types
+
+  - Implement a video player with streaming capability
+
+  - Allow students to mark content items as complete
+
+
+  ### 3.4 Learning Path Creation
+
+
+  #### 3.4.1 Module Creation (Teachers)
+
+  - Allow teachers to create modules or units within a course
+
+  - Provide options to set prerequisites for each module
+
+
+  #### 3.4.2 Content Sequencing (Teachers)
+
+  - Enable arrangement of content items in a specific order within modules
+
+  - Allow setting content items as mandatory or optional
+
+
+  #### 3.4.3 Progress Tracking (Students)
+
+  - Display a visual representation of the learning path
+
+  - Show completed, current, and locked modules
+
+  - Prevent access to locked content until prerequisites are met
+
+
+  ### 3.5 Assignment Submission and Grading
+
+
+  #### 3.5.1 Assignment Creation (Teachers)
+
+  - Provide a form to create assignments with fields for:
+    - Title
+    - Description
+    - Due date
+    - Maximum score
+    - Submission type (file upload, text entry, or both)
+    - Associated module or unit
+
+  #### 3.5.2 Assignment Submission (Students)
+
+  - Allow file uploads and/or text entry based on assignment settings
+
+  - Implement a submission confirmation system
+
+  - Display remaining time before the due date
+
+
+  #### 3.5.3 Grading System (Teachers)
+
+  - Provide a grading interface for each assignment
+
+  - Allow assigning scores and providing written feedback
+
+  - Calculate and display overall grades for each student
+
+
+  #### 3.5.4 Grade Viewing (Students and Guardians)
+
+  - Display individual assignment grades and feedback
+
+  - Provide a grade overview page showing all assignment grades and overall
+  course grade
+
+
+  ### 3.6 Progress Tracking
+
+
+  #### 3.6.1 Student Progress Dashboard
+
+  - Display progress for each enrolled course
+
+  - Show completed modules, upcoming assignments, and overall grades
+
+  - Implement a visual progress bar for each course
+
+
+  #### 3.6.2 Teacher Progress Overview
+
+  - Provide a dashboard showing the progress of all students in each course
+
+  - Implement sorting and filtering options to identify struggling or excelling
+  students
+
+
+  #### 3.6.3 Guardian Progress View
+
+  - Display child's progress across all enrolled courses
+
+  - Show grades, completed assignments, and teacher comments
+
+
+  ### 3.7 Communication Tools
+
+
+  #### 3.7.1 Messaging System
+
+  - Implement an inbox for sending and receiving messages
+
+  - Allow individual and group messaging
+
+  - Provide message threading for easy conversation tracking
+
+
+  #### 3.7.2 Announcements (Teachers)
+
+  - Allow posting of course-wide announcements
+
+  - Display announcements prominently on the course dashboard
+
+
+  #### 3.7.3 Comment System
+
+  - Enable teachers to leave comments on assignments and overall student
+  performance
+
+  - Allow guardians to reply to teacher comments
+
+  - Implement email notifications for new comments
+
+
+  #### 3.7.4 Video Conferencing Integration
+
+  - Integrate a third-party video conferencing tool (e.g., Zoom, Google Meet)
+
+  - Allow teachers to schedule and host virtual office hours or parent-teacher
+  conferences
+
+
+  ## 4. User Interface Requirements
+
+
+  ### 4.1 General Layout
+
+  - Implement a responsive design for desktop and mobile devices
+
+  - Use a consistent color scheme and typography throughout the application
+
+
+  ### 4.2 Navigation
+
+  - Provide a clear and consistent navigation menu for each user type
+
+  - Implement breadcrumbs for easy navigation within courses and modules
+
+
+  ### 4.3 Dashboards
+
+  - Design intuitive dashboards for each user type
+
+  - Display relevant information and quick action buttons
+
+
+  ### 4.4 Course View
+
+  - Create a clean and organized layout for course content
+
+  - Clearly separate modules and assignments
+
+
+  ### 4.5 Content Viewer
+
+  - Implement a user-friendly content viewer for various file types
+
+  - Provide options for full-screen viewing and navigation controls
+
+
+  ## 5. Additional Features
+
+
+  ### 5.1 Notification System
+
+  - Implement in-app notifications for important events (new assignments, graded
+  work, messages)
+
+  - Allow users to customize notification preferences
+
+
+  ### 5.2 Calendar Integration
+
+  - Provide a calendar view for assignment due dates and course events
+
+  - Allow export of calendar events to popular calendar applications
+
+
+  ### 5.3 Offline Mode
+
+  - Enable students to download course content for offline viewing
+
+  - Implement synchronization when the user comes back online
+
+
+  ### 5.4 Student Collaboration Tools
+
+  - Add a discussion forum for each course
+
+  - Implement a group project space for collaborative assignments
+
+
+  ## 6. Non-Functional Requirements
+
+
+  ### 6.1 Performance
+
+  - Ensure page load times do not exceed 3 seconds under normal conditions
+
+  - Optimize content delivery for smooth video playback
+
+
+  ### 6.2 Usability
+
+  - Design an intuitive and user-friendly interface
+
+  - Ensure compatibility with major web browsers (Chrome, Firefox, Safari, Edge)
+
+
+  ### 6.3 Accessibility
+
+  - Implement WCAG 2.1 guidelines for accessibility
+
+  - Provide options for text-to-speech and closed captions for video content
+
+
+  ### 6.4 Security
+
+  - Use HTTPS for all data transmissions
+
+  - Implement secure password hashing and storage
+
+  - Ensure proper access controls for different user roles
+
+
+  This FRD outlines the core user-facing features and interface requirements for
+  the DivergesiApp MVP. It provides a comprehensive guide for developers to
+  implement the necessary functionality while ensuring a smooth and intuitive
+  user experience for teachers, students, and guardians.

@@ -1,0 +1,637 @@
+_updated: 1731084519082
+_processing: false
+key: db.schemas
+data:
+  users:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: email
+      type: String
+      unique: true
+      nullable: false
+    - name: password_hash
+      type: String
+      nullable: false
+    - name: full_name
+      type: String
+      nullable: false
+    - name: user_type
+      type: String
+      nullable: false
+    - name: created_at
+      type: Number
+      nullable: false
+    - name: updated_at
+      type: Number
+      nullable: false
+  user_profiles:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: profile_picture_url
+      type: String
+      nullable: true
+    - name: bio
+      type: String
+      nullable: true
+    - name: grade_level
+      type: Number
+      nullable: true
+    - name: subjects_taught
+      type: JSON
+      nullable: true
+    - name: contact_information
+      type: JSON
+      nullable: true
+  courses:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: teacher_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: name
+      type: String
+      nullable: false
+    - name: description
+      type: String
+      nullable: true
+    - name: grade_level
+      type: Number
+      nullable: true
+    - name: subject
+      type: String
+      nullable: true
+    - name: created_at
+      type: Number
+      nullable: false
+    - name: updated_at
+      type: Number
+      nullable: false
+  course_enrollments:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: course_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: courses
+        column: uid
+    - name: student_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: enrollment_date
+      type: Number
+      nullable: false
+    - name: status
+      type: String
+      nullable: false
+  modules:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: course_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: courses
+        column: uid
+    - name: name
+      type: String
+      nullable: false
+    - name: description
+      type: String
+      nullable: true
+    - name: order_index
+      type: Number
+      nullable: false
+    - name: prerequisites
+      type: JSON
+      nullable: true
+  content_items:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: module_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: modules
+        column: uid
+    - name: title
+      type: String
+      nullable: false
+    - name: description
+      type: String
+      nullable: true
+    - name: content_type
+      type: String
+      nullable: false
+    - name: file_url
+      type: String
+      nullable: true
+    - name: order_index
+      type: Number
+      nullable: false
+    - name: is_mandatory
+      type: Boolean
+      nullable: false
+      default: true
+    - name: created_at
+      type: Number
+      nullable: false
+    - name: updated_at
+      type: Number
+      nullable: false
+  student_progress:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: student_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: content_item_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: content_items
+        column: uid
+    - name: status
+      type: String
+      nullable: false
+    - name: completion_date
+      type: Number
+      nullable: true
+  assignments:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: course_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: courses
+        column: uid
+    - name: title
+      type: String
+      nullable: false
+    - name: description
+      type: String
+      nullable: true
+    - name: due_date
+      type: Number
+      nullable: true
+    - name: max_score
+      type: Number
+      nullable: true
+    - name: submission_type
+      type: String
+      nullable: false
+    - name: created_at
+      type: Number
+      nullable: false
+    - name: updated_at
+      type: Number
+      nullable: false
+  submissions:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: assignment_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: assignments
+        column: uid
+    - name: student_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: submission_text
+      type: String
+      nullable: true
+    - name: file_url
+      type: String
+      nullable: true
+    - name: submitted_at
+      type: Number
+      nullable: false
+  grades:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: submission_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: submissions
+        column: uid
+    - name: graded_by_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: score
+      type: Number
+      nullable: true
+    - name: feedback
+      type: String
+      nullable: true
+    - name: graded_at
+      type: Number
+      nullable: false
+  messages:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: sender_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: recipient_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: subject
+      type: String
+      nullable: true
+    - name: body
+      type: String
+      nullable: false
+    - name: sent_at
+      type: Number
+      nullable: false
+    - name: read_at
+      type: Number
+      nullable: true
+  announcements:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: course_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: courses
+        column: uid
+    - name: teacher_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: title
+      type: String
+      nullable: false
+    - name: content
+      type: String
+      nullable: false
+    - name: created_at
+      type: Number
+      nullable: false
+  comments:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: target_type
+      type: String
+      nullable: false
+    - name: target_uid
+      type: String
+      nullable: false
+    - name: content
+      type: String
+      nullable: false
+    - name: created_at
+      type: Number
+      nullable: false
+  guardian_associations:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: guardian_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: student_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: relationship
+      type: String
+      nullable: true
+  notifications:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: type
+      type: String
+      nullable: false
+    - name: content
+      type: String
+      nullable: false
+    - name: is_read
+      type: Boolean
+      nullable: false
+      default: false
+    - name: created_at
+      type: Number
+      nullable: false
+  calendar_events:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: title
+      type: String
+      nullable: false
+    - name: description
+      type: String
+      nullable: true
+    - name: start_time
+      type: Number
+      nullable: false
+    - name: end_time
+      type: Number
+      nullable: false
+    - name: event_type
+      type: String
+      nullable: false
+  user_settings:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: notification_preferences
+      type: JSON
+      nullable: true
+    - name: language_preference
+      type: String
+      nullable: true
+    - name: theme_preference
+      type: String
+      nullable: true
+  discussion_forums:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: course_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: courses
+        column: uid
+    - name: title
+      type: String
+      nullable: false
+    - name: description
+      type: String
+      nullable: true
+    - name: created_at
+      type: Number
+      nullable: false
+  forum_posts:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: forum_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: discussion_forums
+        column: uid
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: content
+      type: String
+      nullable: false
+    - name: created_at
+      type: Number
+      nullable: false
+    - name: updated_at
+      type: Number
+      nullable: false
+  forum_replies:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: post_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: forum_posts
+        column: uid
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: content
+      type: String
+      nullable: false
+    - name: created_at
+      type: Number
+      nullable: false
+    - name: updated_at
+      type: Number
+      nullable: false
+  parent_teacher_meetings:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: teacher_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: guardian_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: student_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: scheduled_time
+      type: Number
+      nullable: false
+    - name: duration
+      type: Number
+      nullable: false
+    - name: status
+      type: String
+      nullable: false
+    - name: notes
+      type: String
+      nullable: true
+  offline_content_access:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: content_item_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: content_items
+        column: uid
+    - name: last_synced
+      type: Number
+      nullable: false
+  user_activity_logs:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: activity_type
+      type: String
+      nullable: false
+    - name: details
+      type: JSON
+      nullable: true
+    - name: timestamp
+      type: Number
+      nullable: false
+  learning_analytics:
+    - name: uid
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: uid
+    - name: course_uid
+      type: String
+      nullable: false
+      foreignKey:
+        table: courses
+        column: uid
+    - name: metric_type
+      type: String
+      nullable: false
+    - name: value
+      type: Number
+      nullable: false
+    - name: timestamp
+      type: Number
+      nullable: false

@@ -1,0 +1,377 @@
+_updated: 1731147875403
+_processing: false
+key: webapp.react.views.UV_Registration.latest
+data:
+  analysis: >-
+    Analysis for UV_Registration Component:
+
+
+    1. Component Purpose:
+       The UV_Registration component serves as the registration page for new users to create an account on the DivergesiApp platform. It collects essential information from users and handles the registration process.
+
+    2. State Management:
+       - Local state using React's useState hook for form data, loading state, and error messages.
+       - Global state access through Redux for storing authentication data upon successful registration.
+
+    3. Form Fields:
+       - Full Name
+       - Email
+       - Password
+       - Confirm Password
+       - User Type (Teacher, Student, Guardian)
+       - Conditional fields based on user type:
+         - For Students: Grade Level, School Name
+         - For Guardians: Associated Student Information
+
+    4. Form Validation:
+       - Client-side validation for all fields
+       - Password strength requirements
+       - Email format validation
+       - Matching password and confirm password fields
+
+    5. API Interaction:
+       - POST request to '/auth/signup' endpoint for user registration
+       - Handling of successful registration and error responses
+
+    6. User Experience:
+       - Dynamic form field rendering based on selected user type
+       - Loading indicator during form submission
+       - Error message display for failed registrations
+       - Success message and redirection upon successful registration
+
+    7. Accessibility and Compliance:
+       - ARIA attributes for improved accessibility
+       - GDPR compliance notice and checkbox for terms of service agreement
+
+    8. Styling:
+       - Tailwind CSS for responsive design and consistent styling
+
+    9. Navigation:
+       - Link to login page for existing users
+
+    Implementation Approach:
+
+    1. Create a functional component using React.FC
+
+    2. Set up local state for form data, loading state, and error messages
+
+    3. Implement form rendering with conditional fields based on user type
+
+    4. Create form validation functions
+
+    5. Implement handleSubmit function to process form submission
+
+    6. Use Redux dispatch to update global state on successful registration
+
+    7. Implement error handling and display
+
+    8. Add loading indicator during form submission
+
+    9. Style the component using Tailwind CSS classes
+
+    10. Ensure accessibility with proper ARIA attributes and semantic HTML
+
+
+    This implementation will create a comprehensive registration page that meets
+    the requirements specified in the PRD and FRD documents.
+  tsx: >-
+    import React, { useState } from 'react';
+
+    import { Link, useNavigate } from 'react-router-dom';
+
+    import { useDispatch } from 'react-redux';
+
+    import { set_auth } from '@/store/main';
+
+    import axios from 'axios';
+
+
+    const UV_Registration: React.FC = () => {
+      const dispatch = useDispatch();
+      const navigate = useNavigate();
+
+      const [formData, setFormData] = useState({
+        full_name: '',
+        email: '',
+        password: '',
+        confirm_password: '',
+        user_type: 'student',
+        grade_level: '',
+        school_name: '',
+        associated_student: '',
+      });
+
+      const [isLoading, setIsLoading] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+      const [agreeTerms, setAgreeTerms] = useState(false);
+
+      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prevData => ({ ...prevData, [name]: value }));
+      };
+
+      const validateForm = () => {
+        if (!formData.full_name || !formData.email || !formData.password || !formData.confirm_password) {
+          setError('Please fill in all required fields.');
+          return false;
+        }
+        if (formData.password !== formData.confirm_password) {
+          setError('Passwords do not match.');
+          return false;
+        }
+        if (formData.password.length < 8) {
+          setError('Password must be at least 8 characters long.');
+          return false;
+        }
+        if (!agreeTerms) {
+          setError('You must agree to the terms of service.');
+          return false;
+        }
+        return true;
+      };
+
+      const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+
+        if (!validateForm()) return;
+
+        setIsLoading(true);
+
+        try {
+          const response = await axios.post('http://localhost:1337/auth/signup', {
+            full_name: formData.full_name,
+            email: formData.email,
+            password: formData.password,
+            user_type: formData.user_type,
+            grade_level: formData.grade_level || undefined,
+            school_name: formData.school_name || undefined,
+            associated_student: formData.associated_student || undefined,
+          });
+
+          const { token, user } = response.data;
+          dispatch(set_auth({ user, token, is_authenticated: true }));
+          navigate('/dashboard');
+        } catch (error) {
+          if (axios.isAxiosError(error) && error.response) {
+            setError(error.response.data.error || 'An error occurred during registration.');
+          } else {
+            setError('An unexpected error occurred. Please try again.');
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
+          </div>
+
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div>
+                  <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="full_name"
+                      name="full_name"
+                      type="text"
+                      required
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={formData.full_name}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Email address
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700">
+                    Confirm Password
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="confirm_password"
+                      name="confirm_password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={formData.confirm_password}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="user_type" className="block text-sm font-medium text-gray-700">
+                    I am a
+                  </label>
+                  <select
+                    id="user_type"
+                    name="user_type"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={formData.user_type}
+                    onChange={handleInputChange}
+                  >
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="guardian">Guardian</option>
+                  </select>
+                </div>
+
+                {formData.user_type === 'student' && (
+                  <>
+                    <div>
+                      <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700">
+                        Grade Level
+                      </label>
+                      <input
+                        id="grade_level"
+                        name="grade_level"
+                        type="number"
+                        min="1"
+                        max="12"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        value={formData.grade_level}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="school_name" className="block text-sm font-medium text-gray-700">
+                        School Name
+                      </label>
+                      <input
+                        id="school_name"
+                        name="school_name"
+                        type="text"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        value={formData.school_name}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {formData.user_type === 'guardian' && (
+                  <div>
+                    <label htmlFor="associated_student" className="block text-sm font-medium text-gray-700">
+                      Associated Student's Name
+                    </label>
+                    <input
+                      id="associated_student"
+                      name="associated_student"
+                      type="text"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={formData.associated_student}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center">
+                  <input
+                    id="agree_terms"
+                    name="agree_terms"
+                    type="checkbox"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                  />
+                  <label htmlFor="agree_terms" className="ml-2 block text-sm text-gray-900">
+                    I agree to the <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">Terms of Service</a> and <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">Privacy Policy</a>
+                  </label>
+                </div>
+
+                {error && (
+                  <div className="text-red-600 text-sm mt-2">
+                    {error}
+                  </div>
+                )}
+
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Registering...' : 'Register'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">
+                      Already have an account?
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Link
+                    to="/login"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-gray-50"
+                  >
+                    Log in
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+
+    export default UV_Registration;
+  dependencies:
+    react: "*"
+    react-router-dom: "*"
+    react-redux: "*"
+    axios: "*"
+  timestamp: "1731114898924"
