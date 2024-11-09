@@ -1,0 +1,395 @@
+-- Create tables
+
+CREATE TABLE users (
+    uid VARCHAR(255) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    user_type VARCHAR(50) NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE user_profiles (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    profile_picture_url VARCHAR(255),
+    bio TEXT,
+    grade_level INTEGER,
+    subjects_taught JSONB,
+    contact_information JSONB,
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE courses (
+    uid VARCHAR(255) PRIMARY KEY,
+    teacher_uid VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    grade_level INTEGER,
+    subject VARCHAR(100),
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    FOREIGN KEY (teacher_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE course_enrollments (
+    uid VARCHAR(255) PRIMARY KEY,
+    course_uid VARCHAR(255) NOT NULL,
+    student_uid VARCHAR(255) NOT NULL,
+    enrollment_date BIGINT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    FOREIGN KEY (course_uid) REFERENCES courses(uid) ON DELETE CASCADE,
+    FOREIGN KEY (student_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    UNIQUE (course_uid, student_uid)
+);
+
+CREATE TABLE modules (
+    uid VARCHAR(255) PRIMARY KEY,
+    course_uid VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    order_index INTEGER NOT NULL,
+    prerequisites JSONB,
+    FOREIGN KEY (course_uid) REFERENCES courses(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE content_items (
+    uid VARCHAR(255) PRIMARY KEY,
+    module_uid VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    content_type VARCHAR(50) NOT NULL,
+    file_url VARCHAR(255),
+    order_index INTEGER NOT NULL,
+    is_mandatory BOOLEAN DEFAULT TRUE,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    FOREIGN KEY (module_uid) REFERENCES modules(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE student_progress (
+    uid VARCHAR(255) PRIMARY KEY,
+    student_uid VARCHAR(255) NOT NULL,
+    content_item_uid VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    completion_date BIGINT,
+    FOREIGN KEY (student_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    FOREIGN KEY (content_item_uid) REFERENCES content_items(uid) ON DELETE CASCADE,
+    UNIQUE (student_uid, content_item_uid)
+);
+
+CREATE TABLE assignments (
+    uid VARCHAR(255) PRIMARY KEY,
+    course_uid VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    due_date BIGINT,
+    max_score FLOAT,
+    submission_type VARCHAR(50) NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    FOREIGN KEY (course_uid) REFERENCES courses(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE submissions (
+    uid VARCHAR(255) PRIMARY KEY,
+    assignment_uid VARCHAR(255) NOT NULL,
+    student_uid VARCHAR(255) NOT NULL,
+    submission_text TEXT,
+    file_url VARCHAR(255),
+    submitted_at BIGINT NOT NULL,
+    FOREIGN KEY (assignment_uid) REFERENCES assignments(uid) ON DELETE CASCADE,
+    FOREIGN KEY (student_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    UNIQUE (assignment_uid, student_uid)
+);
+
+CREATE TABLE grades (
+    uid VARCHAR(255) PRIMARY KEY,
+    submission_uid VARCHAR(255) NOT NULL,
+    graded_by_uid VARCHAR(255) NOT NULL,
+    score FLOAT,
+    feedback TEXT,
+    graded_at BIGINT NOT NULL,
+    FOREIGN KEY (submission_uid) REFERENCES submissions(uid) ON DELETE CASCADE,
+    FOREIGN KEY (graded_by_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE messages (
+    uid VARCHAR(255) PRIMARY KEY,
+    sender_uid VARCHAR(255) NOT NULL,
+    recipient_uid VARCHAR(255) NOT NULL,
+    subject VARCHAR(255),
+    body TEXT NOT NULL,
+    sent_at BIGINT NOT NULL,
+    read_at BIGINT,
+    FOREIGN KEY (sender_uid) REFERENCES users(uid),
+    FOREIGN KEY (recipient_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE announcements (
+    uid VARCHAR(255) PRIMARY KEY,
+    course_uid VARCHAR(255) NOT NULL,
+    teacher_uid VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    FOREIGN KEY (course_uid) REFERENCES courses(uid) ON DELETE CASCADE,
+    FOREIGN KEY (teacher_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE comments (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_uid VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    FOREIGN KEY (user_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE guardian_associations (
+    uid VARCHAR(255) PRIMARY KEY,
+    guardian_uid VARCHAR(255) NOT NULL,
+    student_uid VARCHAR(255) NOT NULL,
+    relationship VARCHAR(50),
+    FOREIGN KEY (guardian_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    FOREIGN KEY (student_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    UNIQUE (guardian_uid, student_uid)
+);
+
+CREATE TABLE notifications (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at BIGINT NOT NULL,
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE calendar_events (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_time BIGINT NOT NULL,
+    end_time BIGINT NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE user_settings (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    notification_preferences JSONB,
+    language_preference VARCHAR(50),
+    theme_preference VARCHAR(50),
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE discussion_forums (
+    uid VARCHAR(255) PRIMARY KEY,
+    course_uid VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at BIGINT NOT NULL,
+    FOREIGN KEY (course_uid) REFERENCES courses(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE forum_posts (
+    uid VARCHAR(255) PRIMARY KEY,
+    forum_uid VARCHAR(255) NOT NULL,
+    user_uid VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    FOREIGN KEY (forum_uid) REFERENCES discussion_forums(uid) ON DELETE CASCADE,
+    FOREIGN KEY (user_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE forum_replies (
+    uid VARCHAR(255) PRIMARY KEY,
+    post_uid VARCHAR(255) NOT NULL,
+    user_uid VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    FOREIGN KEY (post_uid) REFERENCES forum_posts(uid) ON DELETE CASCADE,
+    FOREIGN KEY (user_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE parent_teacher_meetings (
+    uid VARCHAR(255) PRIMARY KEY,
+    teacher_uid VARCHAR(255) NOT NULL,
+    guardian_uid VARCHAR(255) NOT NULL,
+    student_uid VARCHAR(255) NOT NULL,
+    scheduled_time BIGINT NOT NULL,
+    duration INTEGER NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    notes TEXT,
+    FOREIGN KEY (teacher_uid) REFERENCES users(uid),
+    FOREIGN KEY (guardian_uid) REFERENCES users(uid),
+    FOREIGN KEY (student_uid) REFERENCES users(uid)
+);
+
+CREATE TABLE offline_content_access (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    content_item_uid VARCHAR(255) NOT NULL,
+    last_synced BIGINT NOT NULL,
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    FOREIGN KEY (content_item_uid) REFERENCES content_items(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE user_activity_logs (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    activity_type VARCHAR(50) NOT NULL,
+    details JSONB,
+    timestamp BIGINT NOT NULL,
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE
+);
+
+CREATE TABLE learning_analytics (
+    uid VARCHAR(255) PRIMARY KEY,
+    user_uid VARCHAR(255) NOT NULL,
+    course_uid VARCHAR(255) NOT NULL,
+    metric_type VARCHAR(50) NOT NULL,
+    value FLOAT NOT NULL,
+    timestamp BIGINT NOT NULL,
+    FOREIGN KEY (user_uid) REFERENCES users(uid) ON DELETE CASCADE,
+    FOREIGN KEY (course_uid) REFERENCES courses(uid) ON DELETE CASCADE
+);
+
+-- Create indexes
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_course_enrollments_student_uid ON course_enrollments(student_uid);
+CREATE INDEX idx_student_progress_student_uid ON student_progress(student_uid);
+CREATE INDEX idx_student_progress_content_item_uid ON student_progress(content_item_uid);
+CREATE INDEX idx_submissions_assignment_uid ON submissions(assignment_uid);
+CREATE INDEX idx_submissions_student_uid ON submissions(student_uid);
+CREATE INDEX idx_messages_recipient_uid ON messages(recipient_uid);
+CREATE INDEX idx_messages_read_at ON messages(read_at);
+CREATE INDEX idx_announcements_course_uid ON announcements(course_uid);
+CREATE INDEX idx_comments_target_uid ON comments(target_uid);
+CREATE INDEX idx_notifications_user_uid ON notifications(user_uid);
+CREATE INDEX idx_calendar_events_user_uid ON calendar_events(user_uid);
+CREATE INDEX idx_forum_posts_forum_uid ON forum_posts(forum_uid);
+CREATE INDEX idx_forum_replies_post_uid ON forum_replies(post_uid);
+CREATE INDEX idx_user_activity_logs_user_uid ON user_activity_logs(user_uid);
+CREATE INDEX idx_learning_analytics_user_uid ON learning_analytics(user_uid);
+CREATE INDEX idx_learning_analytics_course_uid ON learning_analytics(course_uid);
+
+-- Insert sample data
+
+INSERT INTO users (uid, email, password_hash, full_name, user_type, created_at, updated_at) VALUES
+('u1', 'teacher1@example.com', 'hash1', 'John Doe', 'teacher', 1625097600000, 1625097600000),
+('u2', 'student1@example.com', 'hash2', 'Jane Smith', 'student', 1625184000000, 1625184000000),
+('u3', 'guardian1@example.com', 'hash3', 'Bob Johnson', 'guardian', 1625270400000, 1625270400000),
+('u4', 'teacher2@example.com', 'hash4', 'Alice Brown', 'teacher', 1625356800000, 1625356800000),
+('u5', 'student2@example.com', 'hash5', 'Charlie Davis', 'student', 1625443200000, 1625443200000);
+
+INSERT INTO user_profiles (uid, user_uid, profile_picture_url, bio, grade_level, subjects_taught, contact_information) VALUES
+('up1', 'u1', 'https://picsum.photos/seed/teacher1/200', 'Experienced math teacher', NULL, '["Math", "Physics"]', '{"phone": "123-456-7890"}'),
+('up2', 'u2', 'https://picsum.photos/seed/student1/200', 'Enthusiastic learner', 10, NULL, '{"email": "jane.smith@example.com"}'),
+('up3', 'u3', NULL, 'Supportive parent', NULL, NULL, '{"phone": "987-654-3210"}'),
+('up4', 'u4', 'https://picsum.photos/seed/teacher2/200', 'Passionate about literature', NULL, '["English", "Literature"]', '{"email": "alice.brown@example.com"}'),
+('up5', 'u5', 'https://picsum.photos/seed/student2/200', 'Aspiring scientist', 11, NULL, '{"phone": "555-123-4567"}');
+
+INSERT INTO courses (uid, teacher_uid, name, description, grade_level, subject, created_at, updated_at) VALUES
+('c1', 'u1', 'Advanced Mathematics', 'In-depth study of calculus and linear algebra', 11, 'Mathematics', 1625529600000, 1625529600000),
+('c2', 'u4', 'World Literature', 'Exploring classic and contemporary literature from around the world', 10, 'Literature', 1625616000000, 1625616000000);
+
+INSERT INTO course_enrollments (uid, course_uid, student_uid, enrollment_date, status) VALUES
+('ce1', 'c1', 'u2', 1625702400000, 'active'),
+('ce2', 'c2', 'u2', 1625788800000, 'active'),
+('ce3', 'c1', 'u5', 1625875200000, 'active'),
+('ce4', 'c2', 'u5', 1625961600000, 'active');
+
+INSERT INTO modules (uid, course_uid, name, description, order_index, prerequisites) VALUES
+('m1', 'c1', 'Limits and Continuity', 'Understanding the fundamental concepts of calculus', 1, NULL),
+('m2', 'c1', 'Derivatives', 'Exploring rates of change and optimization', 2, '{"modules": ["m1"]}'),
+('m3', 'c2', 'Ancient Literature', 'Studying classical works from ancient civilizations', 1, NULL),
+('m4', 'c2', 'Renaissance Literature', 'Examining the rebirth of literature in Europe', 2, '{"modules": ["m3"]}');
+
+INSERT INTO content_items (uid, module_uid, title, description, content_type, file_url, order_index, is_mandatory, created_at, updated_at) VALUES
+('ci1', 'm1', 'Introduction to Limits', 'Video lecture on the concept of limits', 'video', 'https://example.com/videos/limits_intro.mp4', 1, true, 1626048000000, 1626048000000),
+('ci2', 'm1', 'Limit Exercises', 'Practice problems for limits', 'pdf', 'https://example.com/pdfs/limit_exercises.pdf', 2, true, 1626134400000, 1626134400000),
+('ci3', 'm3', 'The Iliad Overview', 'An introduction to Homer''s epic poem', 'text', NULL, 1, true, 1626220800000, 1626220800000),
+('ci4', 'm3', 'Ancient Greek Theatre', 'Interactive presentation on Greek dramatic works', 'presentation', 'https://example.com/presentations/greek_theatre.pptx', 2, false, 1626307200000, 1626307200000);
+
+INSERT INTO student_progress (uid, student_uid, content_item_uid, status, completion_date) VALUES
+('sp1', 'u2', 'ci1', 'completed', 1626393600000),
+('sp2', 'u2', 'ci2', 'in_progress', NULL),
+('sp3', 'u5', 'ci3', 'completed', 1626480000000),
+('sp4', 'u5', 'ci4', 'not_started', NULL);
+
+INSERT INTO assignments (uid, course_uid, title, description, due_date, max_score, submission_type, created_at, updated_at) VALUES
+('a1', 'c1', 'Calculus Midterm', 'Comprehensive test on limits and derivatives', 1626566400000, 100, 'file', 1626652800000, 1626652800000),
+('a2', 'c2', 'Literary Analysis Essay', 'Compare and contrast two works from ancient literature', 1626739200000, 50, 'text', 1626825600000, 1626825600000);
+
+INSERT INTO submissions (uid, assignment_uid, student_uid, submission_text, file_url, submitted_at) VALUES
+('s1', 'a1', 'u2', NULL, 'https://example.com/submissions/u2_calculus_midterm.pdf', 1626912000000),
+('s2', 'a2', 'u5', 'In this essay, I will compare Homer''s Iliad with Virgil''s Aeneid...', NULL, 1626998400000);
+
+INSERT INTO grades (uid, submission_uid, graded_by_uid, score, feedback, graded_at) VALUES
+('g1', 's1', 'u1', 85, 'Good work on derivatives, but review limits concept', 1627084800000),
+('g2', 's2', 'u4', 45, 'Excellent analysis, but watch out for grammar errors', 1627171200000);
+
+INSERT INTO messages (uid, sender_uid, recipient_uid, subject, body, sent_at, read_at) VALUES
+('msg1', 'u1', 'u2', 'Upcoming test', 'Don''t forget to prepare for next week''s test!', 1627257600000, 1627344000000),
+('msg2', 'u5', 'u4', 'Essay question', 'Could you clarify the requirements for the essay?', 1627430400000, NULL);
+
+INSERT INTO announcements (uid, course_uid, teacher_uid, title, content, created_at) VALUES
+('an1', 'c1', 'u1', 'Class cancelled tomorrow', 'Due to maintenance, our class will be cancelled tomorrow. We''ll have a make-up session next week.', 1627516800000),
+('an2', 'c2', 'u4', 'Guest speaker next month', 'We''ll have a renowned author visiting our class next month. Prepare questions in advance!', 1627603200000);
+
+INSERT INTO comments (uid, user_uid, target_type, target_uid, content, created_at) VALUES
+('com1', 'u1', 'submission', 's1', 'Great improvement from your last assignment!', 1627689600000),
+('com2', 'u4', 'student_performance', 'u5', 'Charlie has shown significant progress in literary analysis this semester.', 1627776000000);
+
+INSERT INTO guardian_associations (uid, guardian_uid, student_uid, relationship) VALUES
+('ga1', 'u3', 'u2', 'Parent'),
+('ga2', 'u3', 'u5', 'Parent');
+
+INSERT INTO notifications (uid, user_uid, type, content, is_read, created_at) VALUES
+('n1', 'u2', 'assignment_due', 'Your Calculus Midterm is due tomorrow!', false, 1627862400000),
+('n2', 'u5', 'new_announcement', 'New announcement in World Literature course', true, 1627948800000);
+
+INSERT INTO calendar_events (uid, user_uid, title, description, start_time, end_time, event_type) VALUES
+('ce1', 'u1', 'Office Hours', 'Available for student consultations', 1628035200000, 1628042400000, 'teacher_availability'),
+('ce2', 'u2', 'Study Group', 'Calculus study session with classmates', 1628121600000, 1628128800000, 'student_event');
+
+INSERT INTO user_settings (uid, user_uid, notification_preferences, language_preference, theme_preference) VALUES
+('us1', 'u2', '{"email": true, "push": false}', 'en', 'light'),
+('us2', 'u5', '{"email": true, "push": true}', 'es', 'dark');
+
+INSERT INTO discussion_forums (uid, course_uid, title, description, created_at) VALUES
+('df1', 'c1', 'Calculus Concepts', 'Discuss challenging calculus problems and concepts', 1628208000000),
+('df2', 'c2', 'Book Club', 'Share thoughts on our current reading assignments', 1628294400000);
+
+INSERT INTO forum_posts (uid, forum_uid, user_uid, content, created_at, updated_at) VALUES
+('fp1', 'df1', 'u2', 'Can someone explain the concept of limits at infinity?', 1628380800000, 1628380800000),
+('fp2', 'df2', 'u5', 'What are your thoughts on the character development in Chapter 5?', 1628467200000, 1628467200000);
+
+INSERT INTO forum_replies (uid, post_uid, user_uid, content, created_at, updated_at) VALUES
+('fr1', 'fp1', 'u1', 'Limits at infinity describe the behavior of a function as x approaches positive or negative infinity. Let''s discuss this further in class.', 1628553600000, 1628553600000),
+('fr2', 'fp2', 'u4', 'Great observation! The author uses subtle details to show the protagonist''s growth. Can you provide specific examples?', 1628640000000, 1628640000000);
+
+INSERT INTO parent_teacher_meetings (uid, teacher_uid, guardian_uid, student_uid, scheduled_time, duration, status, notes) VALUES
+('ptm1', 'u1', 'u3', 'u2', 1628726400000, 30, 'scheduled', 'Discuss Jane''s progress in Advanced Mathematics'),
+('ptm2', 'u4', 'u3', 'u5', 1628812800000, 30, 'completed', 'Reviewed Charlie''s recent essay and overall performance');
+
+INSERT INTO offline_content_access (uid, user_uid, content_item_uid, last_synced) VALUES
+('oca1', 'u2', 'ci1', 1628899200000),
+('oca2', 'u5', 'ci3', 1628985600000);
+
+INSERT INTO user_activity_logs (uid, user_uid, activity_type, details, timestamp) VALUES
+('ual1', 'u2', 'login', '{"ip": "192.168.1.1", "device": "mobile"}', 1629072000000),
+('ual2', 'u5', 'content_view', '{"content_item": "ci3", "duration": 1800}', 1629158400000);
+
+INSERT INTO learning_analytics (uid, user_uid, course_uid, metric_type, value, timestamp) VALUES
+('la1', 'u2', 'c1', 'engagement_score', 0.85, 1629244800000),
+('la2', 'u5', 'c2', 'assignment_completion_rate', 0.95, 1629331200000);

@@ -1,0 +1,296 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { AppState, AppDispatch } from '@/store/main';
+import axios from 'axios';
+import { Editor } from '@tinymce/tinymce-react';
+import { format } from 'date-fns';
+import { FiUpload, FiSave, FiSend } from 'react-icons/fi';
+
+const UV_AssignmentSubmission: React.FC = () => {
+  const { assignment_uid } = useParams<{ assignment_uid: string }>();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, token } = useSelector((state: AppState) => state.auth);
+  const activeCourse = useSelector((state: AppState) => state.active_course);
+
+  const [assignmentDetails, setAssignmentDetails] = useState<{
+    uid: string;
+    title: string;
+    description: string;
+    due_date: number;
+    max_score: number;
+    submission_type: 'file' | 'text' | 'both';
+    file_types_allowed: string[];
+    max_file_size: number;
+  } | null>(null);
+
+  const [submissionData, setSubmissionData] = useState<{
+    text: string;
+    files: File[];
+  }>({
+    text: '',
+    files: [],
+  });
+
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submissionHistory, setSubmissionHistory] = useState<Array<{ id: string; submitted_at: number; status: string }>>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAssignmentDetails = useCallback(async () => {
+    try {
+      const response = await axios.get(`http://localhost:1337/api/assignments/${assignment_uid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAssignmentDetails(response.data);
+      setTimeRemaining(Math.max(0, response.data.due_date - Date.now()));
+    } catch (error) {
+      console.error('Error fetching assignment details:', error);
+      setError('Failed to load assignment details. Please try again.');
+    }
+  }, [assignment_uid, token]);
+
+  const fetchSubmissionHistory = useCallback(async () => {
+    try {
+      const response = await axios.get(`http://localhost:1337/api/assignments/${assignment_uid}/submissions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubmissionHistory(response.data);
+    } catch (error) {
+      console.error('Error fetching submission history:', error);
+    }
+  }, [assignment_uid, token]);
+
+  useEffect(() => {
+    fetchAssignmentDetails();
+    fetchSubmissionHistory();
+  }, [fetchAssignmentDetails, fetchSubmissionHistory]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeRemaining((prevTime) => {
+        const newTime = prevTime - 1000;
+        if (newTime <= 0) {
+          clearInterval(timer);
+          return 0;
+        }
+        return newTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleTextChange = (content: string) => {
+    setSubmissionData((prev) => ({ ...prev, text: content }));
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setSubmissionData((prev) => ({ ...prev, files: [...prev.files, ...files] }));
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSubmissionData((prev) => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== index),
+    }));
+  };
+
+  const saveDraft = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('text', submissionData.text);
+      submissionData.files.forEach((file) => formData.append('files', file));
+
+      await axios.post(`http://localhost:1337/api/assignments/${assignment_uid}/draft`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+      });
+
+      // Show success message
+      alert('Draft saved successfully');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      setError('Failed to save draft. Please try again.');
+    }
+  };
+
+  const submitAssignment = async () => {
+    if (!window.confirm('Are you sure you want to submit this assignment? You cannot make changes after submission.')) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('text', submissionData.text);
+      submissionData.files.forEach((file) => formData.append('files', file));
+
+      await axios.post(`http://localhost:1337/api/assignments/${assignment_uid}/submit`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+      });
+
+      // Show success message and redirect
+      alert('Assignment submitted successfully');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error submitting assignment:', error);
+      setError('Failed to submit assignment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!assignmentDetails) {
+    return <div className="text-center py-8">Loading assignment details...</div>;
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-4">{assignmentDetails.title}</h1>
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">Assignment Details</h2>
+          <p className="mb-2">{assignmentDetails.description}</p>
+          <p className="mb-2">
+            <span className="font-semibold">Due Date:</span> {format(assignmentDetails.due_date, 'PPpp')}
+          </p>
+          <p className="mb-2">
+            <span className="font-semibold">Max Score:</span> {assignmentDetails.max_score}
+          </p>
+          <p className="mb-2">
+            <span className="font-semibold">Submission Type:</span> {assignmentDetails.submission_type}
+          </p>
+          {assignmentDetails.file_types_allowed && (
+            <p className="mb-2">
+              <span className="font-semibold">Allowed File Types:</span> {assignmentDetails.file_types_allowed.join(', ')}
+            </p>
+          )}
+          {assignmentDetails.max_file_size && (
+            <p>
+              <span className="font-semibold">Max File Size:</span> {assignmentDetails.max_file_size} MB
+            </p>
+          )}
+        </div>
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold mb-2">Time Remaining</h3>
+          <p className="text-xl font-bold text-red-600">
+            {timeRemaining > 0
+              ? `${Math.floor(timeRemaining / 3600000)}h ${Math.floor((timeRemaining % 3600000) / 60000)}m ${Math.floor(
+                  (timeRemaining % 60000) / 1000
+                )}s`
+              : 'Submission closed'}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+        <h2 className="text-2xl font-bold mb-4">Your Submission</h2>
+        {(assignmentDetails.submission_type === 'text' || assignmentDetails.submission_type === 'both') && (
+          <div className="mb-6">
+            <label htmlFor="submission-text" className="block text-sm font-medium text-gray-700 mb-2">
+              Text Submission
+            </label>
+            <Editor
+              id="submission-text"
+              init={{
+                height: 300,
+                menubar: false,
+                plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
+                toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+              }}
+              value={submissionData.text}
+              onEditorChange={handleTextChange}
+            />
+          </div>
+        )}
+
+        {(assignmentDetails.submission_type === 'file' || assignmentDetails.submission_type === 'both') && (
+          <div className="mb-6">
+            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-2">
+              File Upload
+            </label>
+            <div className="flex items-center justify-center w-full">
+              <label
+                htmlFor="file-upload"
+                className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <FiUpload className="w-10 h-10 mb-3 text-gray-400" />
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {assignmentDetails.file_types_allowed.join(', ')} (MAX. {assignmentDetails.max_file_size}MB)
+                  </p>
+                </div>
+                <input id="file-upload" type="file" className="hidden" onChange={handleFileUpload} multiple />
+              </label>
+            </div>
+            {submissionData.files.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {submissionData.files.map((file, index) => (
+                  <li key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded">
+                    <span>{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {error && <p className="text-red-600 mb-4">{error}</p>}
+
+        <div className="flex justify-between">
+          <button
+            type="button"
+            onClick={saveDraft}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <FiSave className="mr-2" />
+            Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={submitAssignment}
+            disabled={isSubmitting || timeRemaining <= 0}
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+              (isSubmitting || timeRemaining <= 0) && 'opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <FiSend className="mr-2" />
+            {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
+          </button>
+        </div>
+      </div>
+
+      {submissionHistory.length > 0 && (
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h2 className="text-2xl font-bold mb-4">Submission History</h2>
+          <ul className="space-y-4">
+            {submissionHistory.map((submission) => (
+              <li key={submission.id} className="border-b pb-4">
+                <p>
+                  <span className="font-semibold">Submitted at:</span> {format(submission.submitted_at, 'PPpp')}
+                </p>
+                <p>
+                  <span className="font-semibold">Status:</span> {submission.status}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UV_AssignmentSubmission;

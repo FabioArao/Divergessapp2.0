@@ -1,0 +1,1168 @@
+openapi: 3.0.0
+info:
+  title: DivergesiApp API
+  version: 1.0.0
+  description: API for DivergesiApp, an interactive educational platform
+servers:
+  - url: http://localhost:1337
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        uid:
+          type: string
+        email:
+          type: string
+        full_name:
+          type: string
+        user_type:
+          type: string
+          enum:
+            - teacher
+            - student
+            - guardian
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+    UserProfile:
+      type: object
+      properties:
+        uid:
+          type: string
+        user_uid:
+          type: string
+        profile_picture_url:
+          type: string
+        bio:
+          type: string
+        grade_level:
+          type: integer
+        subjects_taught:
+          type: object
+        contact_information:
+          type: object
+    Course:
+      type: object
+      properties:
+        uid:
+          type: string
+        teacher_uid:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        grade_level:
+          type: integer
+        subject:
+          type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+    Module:
+      type: object
+      properties:
+        uid:
+          type: string
+        course_uid:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        order_index:
+          type: integer
+        prerequisites:
+          type: object
+    ContentItem:
+      type: object
+      properties:
+        uid:
+          type: string
+        module_uid:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        content_type:
+          type: string
+          enum:
+            - video
+            - pdf
+            - image
+            - text
+            - presentation
+            - audio
+        file_url:
+          type: string
+        order_index:
+          type: integer
+        is_mandatory:
+          type: boolean
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+    Assignment:
+      type: object
+      properties:
+        uid:
+          type: string
+        course_uid:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        due_date:
+          type: integer
+        max_score:
+          type: number
+        submission_type:
+          type: string
+          enum:
+            - file
+            - text
+            - both
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+    Submission:
+      type: object
+      properties:
+        uid:
+          type: string
+        assignment_uid:
+          type: string
+        student_uid:
+          type: string
+        submission_text:
+          type: string
+        file_url:
+          type: string
+        submitted_at:
+          type: integer
+    Grade:
+      type: object
+      properties:
+        uid:
+          type: string
+        submission_uid:
+          type: string
+        graded_by_uid:
+          type: string
+        score:
+          type: number
+        feedback:
+          type: string
+        graded_at:
+          type: integer
+    Message:
+      type: object
+      properties:
+        uid:
+          type: string
+        sender_uid:
+          type: string
+        recipient_uid:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        sent_at:
+          type: integer
+        read_at:
+          type: integer
+    Announcement:
+      type: object
+      properties:
+        uid:
+          type: string
+        course_uid:
+          type: string
+        teacher_uid:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: integer
+    Comment:
+      type: object
+      properties:
+        uid:
+          type: string
+        user_uid:
+          type: string
+        target_type:
+          type: string
+          enum:
+            - submission
+            - student_performance
+        target_uid:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: integer
+    Notification:
+      type: object
+      properties:
+        uid:
+          type: string
+        user_uid:
+          type: string
+        type:
+          type: string
+        content:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: integer
+    CalendarEvent:
+      type: object
+      properties:
+        uid:
+          type: string
+        user_uid:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        start_time:
+          type: integer
+        end_time:
+          type: integer
+        event_type:
+          type: string
+    ForumPost:
+      type: object
+      properties:
+        uid:
+          type: string
+        forum_uid:
+          type: string
+        user_uid:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+    ForumReply:
+      type: object
+      properties:
+        uid:
+          type: string
+        post_uid:
+          type: string
+        user_uid:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+    ParentTeacherMeeting:
+      type: object
+      properties:
+        uid:
+          type: string
+        teacher_uid:
+          type: string
+        guardian_uid:
+          type: string
+        student_uid:
+          type: string
+        scheduled_time:
+          type: integer
+        duration:
+          type: integer
+        status:
+          type: string
+          enum:
+            - scheduled
+            - completed
+            - cancelled
+        notes:
+          type: string
+    LearningAnalytics:
+      type: object
+      properties:
+        uid:
+          type: string
+        user_uid:
+          type: string
+        course_uid:
+          type: string
+        metric_type:
+          type: string
+        value:
+          type: number
+        timestamp:
+          type: integer
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user and get token
+      operationId: login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+  /auth/signup:
+    post:
+      summary: Register a new user
+      operationId: signup
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                full_name:
+                  type: string
+                user_type:
+                  type: string
+                  enum:
+                    - teacher
+                    - student
+                    - guardian
+              required:
+                - email
+                - password
+                - full_name
+                - user_type
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+  /users/{user_uid}/profile:
+    get:
+      summary: Get user profile
+      operationId: get_user_profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      summary: Update user profile
+      operationId: update_user_profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfile"
+      responses:
+        "200":
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+  /courses:
+    post:
+      summary: Create a new course
+      operationId: create_course
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                grade_level:
+                  type: integer
+                subject:
+                  type: string
+              required:
+                - name
+                - grade_level
+                - subject
+      responses:
+        "201":
+          description: Course created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    get:
+      summary: Get all courses
+      operationId: get_all_courses
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Courses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+  /courses/{course_uid}:
+    get:
+      summary: Get course details
+      operationId: get_course
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Course details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    put:
+      summary: Update course details
+      operationId: update_course
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Course"
+      responses:
+        "200":
+          description: Course updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    delete:
+      summary: Delete a course
+      operationId: delete_course
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Course deleted successfully
+  /courses/{course_uid}/modules:
+    post:
+      summary: Create a new module in a course
+      operationId: create_module
+      tags:
+        - Modules
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Module"
+      responses:
+        "201":
+          description: Module created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Module"
+    get:
+      summary: Get all modules in a course
+      operationId: get_course_modules
+      tags:
+        - Modules
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Modules retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Module"
+  /modules/{module_uid}/content:
+    post:
+      summary: Add content to a module
+      operationId: add_module_content
+      tags:
+        - Content
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: module_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                content_type:
+                  type: string
+                  enum:
+                    - video
+                    - pdf
+                    - image
+                    - text
+                    - presentation
+                    - audio
+                is_mandatory:
+                  type: boolean
+                file:
+                  type: string
+                  format: binary
+              required:
+                - title
+                - content_type
+                - file
+      responses:
+        "201":
+          description: Content added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentItem"
+    get:
+      summary: Get all content in a module
+      operationId: get_module_content
+      tags:
+        - Content
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: module_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Content retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentItem"
+  /courses/{course_uid}/assignments:
+    post:
+      summary: Create a new assignment
+      operationId: create_assignment
+      tags:
+        - Assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Assignment"
+      responses:
+        "201":
+          description: Assignment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+    get:
+      summary: Get all assignments in a course
+      operationId: get_course_assignments
+      tags:
+        - Assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Assignments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assignment"
+  /assignments/{assignment_uid}/submit:
+    post:
+      summary: Submit an assignment
+      operationId: submit_assignment
+      tags:
+        - Assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: assignment_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                submission_text:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Assignment submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+  /assignments/{assignment_uid}/grade:
+    post:
+      summary: Grade an assignment submission
+      operationId: grade_assignment
+      tags:
+        - Assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: assignment_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Grade"
+      responses:
+        "200":
+          description: Assignment graded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Grade"
+  /students/{student_uid}/progress:
+    get:
+      summary: Get student progress
+      operationId: get_student_progress
+      tags:
+        - Progress
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: student_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Student progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  courses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        uid:
+                          type: string
+                        name:
+                          type: string
+                        modules:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              uid:
+                                type: string
+                              name:
+                                type: string
+                              content_items:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    uid:
+                                      type: string
+                                    title:
+                                      type: string
+                                    status:
+                                      type: string
+                                    completion_date:
+                                      type: integer
+  /messages:
+    post:
+      summary: Send a message
+      operationId: send_message
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipient_uid:
+                  type: string
+                subject:
+                  type: string
+                body:
+                  type: string
+              required:
+                - recipient_uid
+                - body
+      responses:
+        "201":
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+    get:
+      summary: Get user's messages
+      operationId: get_messages
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+  /courses/{course_uid}/announcements:
+    post:
+      summary: Create a course announcement
+      operationId: create_announcement
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Announcement"
+      responses:
+        "201":
+          description: Announcement created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+    get:
+      summary: Get course announcements
+      operationId: get_course_announcements
+      tags:
+        - Announcements
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Announcements retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+  /notifications:
+    get:
+      summary: Get user's notifications
+      operationId: get_notifications
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+  /notifications/{notification_uid}/read:
+    put:
+      summary: Mark notification as read
+      operationId: mark_notification_read
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: notification_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification marked as read successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+  /calendar-events:
+    post:
+      summary: Create a calendar event
+      operationId: create_calendar_event
+      tags:
+        - Calendar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarEvent"
+      responses:
+        "201":
+          description: Calendar event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+    get:
+      summary: Get user's calendar events
+      operationId: get_calendar_events
+      tags:
+        - Calendar
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Calendar events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarEvent"
+  /courses/{course_uid}/forum:
+    post:
+      summary: Create a forum post
+      operationId: create_forum_post
+      tags:
+        - Forum
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForumPost"
+      responses:
+        "201":
+          description: Forum post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPost"
+    get:
+      summary: Get course forum posts
+      operationId: get_forum_posts
+      tags:
+        - Forum
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Forum posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForumPost"
+  /forum-posts/{post_uid}/replies:
+    post:
+      summary: Create a forum post reply
+      operationId: create_forum_reply
+      tags:
+        - Forum
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: post_uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForumReply"
+      responses:
+        "201":
+          description: Forum reply created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumReply"
+    get:
+      summary: Get forum post replies
+      operationId: get_forum_replies
+      tags:
+        - Forum
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: post_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Forum replies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForumReply"
+  /parent-teacher-meetings:
+    post:
+      summary: Schedule a parent-teacher meeting
+      operationId: schedule_parent_teacher_meeting
+      tags:
+        - Meetings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParentTeacherMeeting"
+      responses:
+        "201":
+          description: Parent-teacher meeting scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentTeacherMeeting"
+    get:
+      summary: Get user's parent-teacher meetings
+      operationId: get_parent_teacher_meetings
+      tags:
+        - Meetings
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Parent-teacher meetings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParentTeacherMeeting"
+  /learning-analytics/{user_uid}:
+    get:
+      summary: Get learning analytics for a user
+      operationId: get_learning_analytics
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Learning analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LearningAnalytics"
+security:
+  - bearerAuth: []

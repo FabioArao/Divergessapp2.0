@@ -1,0 +1,288 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { AppState, AppDispatch, add_notification } from '@/store/main';
+import axios from 'axios';
+import { io, Socket } from 'socket.io-client';
+
+const UV_MessagingCenter: React.FC = () => {
+  const dispatch: AppDispatch = useDispatch();
+  const auth = useSelector((state: AppState) => state.auth);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [activeConversation, setActiveConversation] = useState<any>(null);
+  const [newMessageContent, setNewMessageContent] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchConversations();
+    initializeWebSocket();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, [activeConversation]);
+
+  const initializeWebSocket = () => {
+    socketRef.current = io('http://localhost:1337', {
+      query: { token: auth.token },
+    });
+
+    socketRef.current.on('new_message', (message: any) => {
+      updateConversationWithNewMessage(message);
+    });
+  };
+
+  const fetchConversations = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('http://localhost:1337/messages', {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      setConversations(response.data);
+    } catch (err) {
+      setError('Failed to fetch conversations');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openConversation = async (conversationUid: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(`http://localhost:1337/messages/${conversationUid}`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      setActiveConversation(response.data);
+    } catch (err) {
+      setError('Failed to open conversation');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessageContent.trim() && attachments.length === 0) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('content', newMessageContent);
+      attachments.forEach((file) => formData.append('attachments', file));
+
+      const response = await axios.post(
+        `http://localhost:1337/messages/${activeConversation.uid}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      updateConversationWithNewMessage(response.data);
+      setNewMessageContent('');
+      setAttachments([]);
+    } catch (err) {
+      setError('Failed to send message');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateConversationWithNewMessage = (message: any) => {
+    setConversations((prevConversations) => {
+      const updatedConversations = prevConversations.map((conv) => {
+        if (conv.uid === message.conversation_uid) {
+          return { ...conv, last_message: message, unread_count: conv.unread_count + 1 };
+        }
+        return conv;
+      });
+      return updatedConversations;
+    });
+
+    if (activeConversation && activeConversation.uid === message.conversation_uid) {
+      setActiveConversation((prevConversation: any) => ({
+        ...prevConversation,
+        messages: [...prevConversation.messages, message],
+      }));
+    } else {
+      dispatch(add_notification({
+        uid: message.uid,
+        type: 'new_message',
+        content: `New message from ${message.sender_name}`,
+        is_read: false,
+        created_at: Date.now(),
+      }));
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments([...attachments, ...Array.from(e.target.files)]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  const filteredConversations = conversations.filter((conv) =>
+    conv.participants.some((p: any) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <div className="w-1/3 bg-white border-r border-gray-200 p-4">
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            className="w-full px-3 py-2 border rounded-lg"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="overflow-y-auto h-full">
+          {filteredConversations.map((conv) => (
+            <div
+              key={conv.uid}
+              className={`p-3 border-b cursor-pointer hover:bg-gray-100 ${
+                activeConversation && activeConversation.uid === conv.uid ? 'bg-blue-100' : ''
+              }`}
+              onClick={() => openConversation(conv.uid)}
+            >
+              <div className="font-semibold">
+                {conv.participants
+                  .filter((p: any) => p.uid !== auth.user?.uid)
+                  .map((p: any) => p.name)
+                  .join(', ')}
+              </div>
+              <div className="text-sm text-gray-500">{conv.last_message.content}</div>
+              {conv.unread_count > 0 && (
+                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full float-right">
+                  {conv.unread_count}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col">
+        {activeConversation ? (
+          <>
+            <div className="bg-white border-b border-gray-200 p-4">
+              <h2 className="text-xl font-semibold">
+                {activeConversation.participants
+                  .filter((p: any) => p.uid !== auth.user?.uid)
+                  .map((p: any) => p.name)
+                  .join(', ')}
+              </h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4" ref={messageListRef}>
+              {activeConversation.messages.map((message: any) => (
+                <div
+                  key={message.uid}
+                  className={`mb-4 ${
+                    message.sender_uid === auth.user?.uid ? 'text-right' : 'text-left'
+                  }`}
+                >
+                  <div
+                    className={`inline-block p-3 rounded-lg ${
+                      message.sender_uid === auth.user?.uid
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200'
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {new Date(message.sent_at).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white border-t border-gray-200 p-4">
+              <form onSubmit={sendMessage} className="flex items-center">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  className="flex-1 px-3 py-2 border rounded-lg mr-2"
+                  value={newMessageContent}
+                  onChange={(e) => setNewMessageContent(e.target.value)}
+                />
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-lg cursor-pointer mr-2"
+                >
+                  Attach
+                </label>
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                  disabled={isLoading}
+                >
+                  Send
+                </button>
+              </form>
+              {attachments.length > 0 && (
+                <div className="mt-2">
+                  {attachments.map((file, index) => (
+                    <div key={index} className="flex items-center mt-1">
+                      <span className="text-sm">{file.name}</span>
+                      <button
+                        onClick={() => removeAttachment(index)}
+                        className="ml-2 text-red-500 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-gray-500">Select a conversation to start messaging</p>
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className="absolute bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UV_MessagingCenter;

@@ -1,0 +1,284 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { AppState } from '@/store/main';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+
+const UV_StudentProgress: React.FC = () => {
+  const { student_uid } = useParams<{ student_uid: string }>();
+  const navigate = useNavigate();
+  const auth = useSelector((state: AppState) => state.auth);
+  const [studentInfo, setStudentInfo] = useState<any>(null);
+  const [overallProgress, setOverallProgress] = useState<any>(null);
+  const [courseProgress, setCourseProgress] = useState<any[]>([]);
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<{ start_date: Date | null; end_date: Date | null }>({
+    start_date: null,
+    end_date: null,
+  });
+  const [expandedCourses, setExpandedCourses] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStudentProgress();
+  }, [student_uid, selectedTimeRange]);
+
+  const fetchStudentProgress = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(`http://localhost:1337/students/${student_uid}/progress`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+        params: {
+          start_date: selectedTimeRange.start_date?.toISOString().split('T')[0],
+          end_date: selectedTimeRange.end_date?.toISOString().split('T')[0],
+        },
+      });
+      const data = response.data;
+      setStudentInfo(data.studentInfo);
+      setOverallProgress(data.overallProgress);
+      setCourseProgress(data.courseProgress);
+      setAttendanceData(data.attendanceData);
+    } catch (err) {
+      setError('Failed to fetch student progress data. Please try again later.');
+      console.error('Error fetching student progress:', err);
+    }
+    setIsLoading(false);
+  };
+
+  const updateTimeRange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates;
+    setSelectedTimeRange({ start_date: start, end_date: end });
+  };
+
+  const toggleCourseDetails = (courseUid: string) => {
+    setExpandedCourses(prev =>
+      prev.includes(courseUid)
+        ? prev.filter(uid => uid !== courseUid)
+        : [...prev, courseUid]
+    );
+  };
+
+  const exportProgressReport = async () => {
+    try {
+      const response = await axios.get(`http://localhost:1337/students/${student_uid}/progress/report`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+        params: {
+          start_date: selectedTimeRange.start_date?.toISOString().split('T')[0],
+          end_date: selectedTimeRange.end_date?.toISOString().split('T')[0],
+        },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `progress_report_${student_uid}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error exporting progress report:', err);
+      alert('Failed to export progress report. Please try again later.');
+    }
+  };
+
+  const renderOverallProgressChart = () => {
+    if (!overallProgress) return null;
+
+    const data = {
+      labels: ['GPA', 'Completed Courses', 'Overall Grade'],
+      datasets: [
+        {
+          label: 'Progress',
+          data: [overallProgress.gpa, overallProgress.completed_courses, overallProgress.overall_grade],
+          backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(75, 192, 192, 0.6)'],
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: true,
+          text: 'Overall Academic Progress',
+        },
+      },
+    };
+
+    return <Bar data={data} options={options} />;
+  };
+
+  const renderCourseProgressChart = (course: any) => {
+    const data = {
+      labels: course.assignments.map((assignment: any) => assignment.title),
+      datasets: [
+        {
+          label: 'Score',
+          data: course.assignments.map((assignment: any) => assignment.score),
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1,
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: true,
+          text: `${course.course_name} Progress`,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+        },
+      },
+    };
+
+    return <Line data={data} options={options} />;
+  };
+
+  const renderAttendanceCalendar = () => {
+    // This is a simplified version. You might want to use a proper calendar component for a more detailed view.
+    return (
+      <div className="grid grid-cols-7 gap-1">
+        {attendanceData.map((day, index) => (
+          <div
+            key={index}
+            className={`p-2 text-center ${
+              day.status === 'present' ? 'bg-green-200' :
+              day.status === 'absent' ? 'bg-red-200' :
+              day.status === 'late' ? 'bg-yellow-200' : 'bg-gray-200'
+            }`}
+          >
+            {new Date(day.date).getDate()}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Student Progress</h1>
+      
+      {studentInfo && (
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+          <div className="flex items-center mb-4">
+            <img src={studentInfo.profile_picture_url || 'https://via.placeholder.com/100'} alt={studentInfo.full_name} className="w-20 h-20 rounded-full mr-4" />
+            <div>
+              <h2 className="text-2xl font-semibold">{studentInfo.full_name}</h2>
+              <p className="text-gray-600">Grade Level: {studentInfo.grade_level}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-2">Select Time Range</h3>
+        <DatePicker
+          selectsRange={true}
+          startDate={selectedTimeRange.start_date}
+          endDate={selectedTimeRange.end_date}
+          onChange={updateTimeRange}
+          className="border rounded p-2"
+        />
+        <button
+          onClick={exportProgressReport}
+          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Export Report
+        </button>
+      </div>
+
+      {overallProgress && (
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+          <h3 className="text-xl font-semibold mb-4">Overall Progress</h3>
+          {renderOverallProgressChart()}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <p className="font-semibold">GPA</p>
+              <p>{overallProgress.gpa.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Total Courses</p>
+              <p>{overallProgress.total_courses}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Completed Courses</p>
+              <p>{overallProgress.completed_courses}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Overall Grade</p>
+              <p>{overallProgress.overall_grade.toFixed(2)}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-4">Course Progress</h3>
+        {courseProgress.map((course) => (
+          <div key={course.course_uid} className="mb-4">
+            <div
+              className="flex justify-between items-center cursor-pointer bg-gray-100 p-4 rounded"
+              onClick={() => toggleCourseDetails(course.course_uid)}
+            >
+              <h4 className="text-lg font-semibold">{course.course_name}</h4>
+              <div className="flex items-center">
+                <span className="mr-2">Grade: {course.grade.toFixed(2)}%</span>
+                <span>{expandedCourses.includes(course.course_uid) ? '▼' : '▶'}</span>
+              </div>
+            </div>
+            {expandedCourses.includes(course.course_uid) && (
+              <div className="mt-4">
+                {renderCourseProgressChart(course)}
+                <h5 className="font-semibold mt-4 mb-2">Assignments</h5>
+                <ul className="list-disc pl-5">
+                  {course.assignments.map((assignment: any) => (
+                    <li key={assignment.uid} className="mb-2">
+                      {assignment.title}: {assignment.score}/{assignment.max_score} ({((assignment.score / assignment.max_score) * 100).toFixed(2)}%)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {attendanceData.length > 0 && (
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+          <h3 className="text-xl font-semibold mb-4">Attendance</h3>
+          {renderAttendanceCalendar()}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UV_StudentProgress;

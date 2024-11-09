@@ -1,0 +1,260 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { AppState } from '@/store/main';
+import axios from 'axios';
+
+const UV_Landing: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<string>('hero');
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const isAuthenticated = useSelector((state: AppState) => state.auth.is_authenticated);
+
+  const sectionRefs = {
+    hero: useRef<HTMLDivElement>(null),
+    features: useRef<HTMLDivElement>(null),
+    testimonials: useRef<HTMLDivElement>(null),
+    faq: useRef<HTMLDivElement>(null),
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 100; // Offset for better UX
+
+      Object.entries(sectionRefs).forEach(([key, ref]) => {
+        if (ref.current && scrollPosition >= ref.current.offsetTop) {
+          setActiveSection(key);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    sectionRefs[sectionId as keyof typeof sectionRefs].current?.scrollIntoView({
+      behavior: 'smooth',
+    });
+  };
+
+  const toggleModal = () => setIsModalOpen(!isModalOpen);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const submitContactForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!formData.name || !formData.email || !formData.message) {
+      setFormError('Please fill in all fields');
+      return;
+    }
+
+    try {
+      await axios.post('http://localhost:1337/api/contact', formData);
+      alert('Thank you for your message. We will get back to you soon!');
+      setFormData({ name: '', email: '', message: '' });
+      toggleModal();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setFormError('An error occurred. Please try again later.');
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-gray-50 min-h-screen">
+        {/* Navigation */}
+        <nav className="bg-white shadow-md">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex">
+                <div className="flex-shrink-0 flex items-center">
+                  <img className="h-8 w-auto" src="https://picsum.photos/200" alt="DivergesiApp Logo" />
+                </div>
+              </div>
+              <div className="flex items-center">
+                <Link to="/login" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Log In</Link>
+                <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3">Sign Up</Link>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <div ref={sectionRefs.hero} className="bg-blue-600 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
+              Revolutionize Your Educational Experience
+            </h1>
+            <p className="mt-6 max-w-2xl mx-auto text-xl">
+              DivergesiApp connects teachers, students, and guardians in one seamless platform.
+            </p>
+            <div className="mt-10 flex justify-center">
+              <Link to="/register" className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                Get Started
+              </Link>
+              <button
+                onClick={() => scrollToSection('features')}
+                className="ml-4 px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 md:py-4 md:text-lg md:px-10"
+              >
+                Learn More
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <div ref={sectionRefs.features} className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-12">Key Features</h2>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { title: 'Course Management', description: 'Create and manage courses with ease' },
+                { title: 'Assignment Tracking', description: 'Submit and grade assignments efficiently' },
+                { title: 'Real-time Communication', description: 'Connect with teachers, students, and guardians instantly' },
+                { title: 'Progress Monitoring', description: 'Track student progress and performance' },
+                { title: 'Resource Sharing', description: 'Share educational materials seamlessly' },
+                { title: 'Video Conferencing', description: 'Conduct virtual classes and meetings' },
+              ].map((feature, index) => (
+                <div key={index} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition duration-300">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Testimonials Section */}
+        <div ref={sectionRefs.testimonials} className="bg-gray-100 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-12">What Our Users Say</h2>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              {[
+                { name: 'Sarah T.', role: 'Teacher', quote: 'DivergesiApp has transformed the way I manage my classes and communicate with students and parents.' },
+                { name: 'Alex C.', role: 'Student', quote: 'I love how easy it is to access all my course materials and submit assignments in one place.' },
+                { name: 'Michael R.', role: 'Parent', quote: 'Being able to track my child\'s progress and communicate with teachers has made a huge difference.' },
+              ].map((testimonial, index) => (
+                <div key={index} className="bg-white rounded-lg p-6 shadow-md">
+                  <p className="text-gray-600 italic mb-4">"{testimonial.quote}"</p>
+                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                  <p className="text-gray-500">{testimonial.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div ref={sectionRefs.faq} className="bg-white py-16">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-12">Frequently Asked Questions</h2>
+            <div className="space-y-8">
+              {[
+                { question: 'How do I get started with DivergesiApp?', answer: 'Simply sign up for an account, and you\'ll be guided through the setup process for your role as a teacher, student, or guardian.' },
+                { question: 'Is DivergesiApp suitable for all grade levels?', answer: 'Yes, DivergesiApp is designed to cater to all grade levels, from elementary to higher education.' },
+                { question: 'Can I use DivergesiApp on mobile devices?', answer: 'Absolutely! DivergesiApp is fully responsive and works seamlessly on desktop, tablet, and mobile devices.' },
+                { question: 'How secure is the platform?', answer: 'We prioritize the security and privacy of our users. DivergesiApp employs industry-standard encryption and follows best practices for data protection.' },
+              ].map((faq, index) => (
+                <div key={index}>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{faq.question}</h3>
+                  <p className="text-gray-600">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Final CTA Section */}
+        <div className="bg-blue-600 text-white py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-extrabold mb-4">Ready to Transform Your Educational Experience?</h2>
+            <p className="text-xl mb-8">Join thousands of teachers, students, and guardians already using DivergesiApp.</p>
+            <div className="flex justify-center space-x-4">
+              <Link to="/register" className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                Sign Up Now
+              </Link>
+              <button
+                onClick={toggleModal}
+                className="px-8 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-blue-500 md:py-4 md:text-lg md:px-10"
+              >
+                Contact Sales
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full">
+              <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+              <form onSubmit={submitContactForm}>
+                <div className="mb-4">
+                  <label htmlFor="name" className="block text-gray-700 font-bold mb-2">Name</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-gray-700 font-bold mb-2">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="message" className="block text-gray-700 font-bold mb-2">Message</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    required
+                  ></textarea>
+                </div>
+                {formError && <p className="text-red-500 mb-4">{formError}</p>}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={toggleModal}
+                    className="mr-4 px-4 py-2 text-gray-600 hover:text-gray-900"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Send Message
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+export default UV_Landing;
